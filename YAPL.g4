@@ -1,85 +1,12 @@
-// Define grammar
 grammar YAPL;
-
-// Tokens
-ID
-    : [a-zA-Z_] [a-zA-Z_0-9]*
-    ;
-INT
-    : [0-9]+
-    ;
-STRING
-    : '"' (~["\r\n] | '""')* '"'
-    ;
-WS
-    : [ \t\r\n] -> skip
-    ;
-COMMENT
-    : '#' ~[\r\n]* -> skip
-    ;
-
-// Keywords
-SELF
-    : 'self'
-    ;
-TYPE
-    : 'int'
-    | 'char'
-    | 'string'
-    | 'bool'
-    | 'SELF_TYPE'
-    | 'void'
-    ;
-CLASS
-    : 'class';
-IF
-    : 'if';
-NEW
-    : 'new';
-ISVOID
-    : 'isvoid';
-LET
-    : 'let';
-WHILE
-    : 'while';
-LOOP
-    : 'loop'
-    ;
-POOL
-    : 'pool'
-    ;
-ELSE
-    : 'else'
-    ;
-FI
-    : 'fi'
-    ;
-THEN
-    : 'then'
-    ;
-INHERITS
-    : 'inherits'
-    ;
-NOT
-    : 'not'
-    ;
-TRUE
-    : 'true'
-    ;
-FALSE
-    : 'false'
-    ;
-ASSIGN
-    : '<-'
-    ;
 
 
 // Productions
 program
-    : (class)+
+    : class_gmr+
     ;
-class
-    : CLASS TYPE (INHERITS TYPE)? '{' (feature ';')* '}'
+class_gmr
+    : 'class' TYPE (INHERITS TYPE)? '{' (feature ';')* '}'
     ;
 feature
     : ID '(' (formal (',' formal)*)? ')' ':' TYPE '{' (expr)* '}'
@@ -115,6 +42,79 @@ expr
     | FALSE
     ;
 
+
+// Keywords
+SELF
+    : 'self'
+    ;
+SELF_TYPE
+    : 'SELF_TYPE'
+    ;
+IF
+    : 'if'
+    ;
+NEW
+    : 'new'
+    ;
+ISVOID
+    : 'isvoid'
+    ;
+LET
+    : 'let'
+    ;
+WHILE
+    : 'while'
+    ;
+LOOP
+    : 'loop'
+    ;
+POOL
+    : 'pool'
+    ;
+ELSE
+    : 'else'
+    ;
+FI
+    : 'fi'
+    ;
+THEN
+    : 'then'
+    ;
+INHERITS
+    : 'inherits'
+    ;
+NOT
+    : 'not'
+    ;
+TRUE
+    : 'true'
+    ;
+FALSE
+    : 'false'
+    ;
+ASSIGN
+    : '<-'
+    ;
+
+// Tokens
+TYPE
+    : [a-zA-Z_] [a-zA-Z_0-9]*
+    ;
+OBJ_TYPE
+    : [a-z_] [a-zA-Z_0-9]*
+    ;
+INT
+    : [0-9]+
+    ;
+STRING
+    : '"' (~["\r\n] | '""')* '"'
+    ;
+WS
+    : [ \t\r\n] -> skip
+    ;
+COMMENT
+    : '#' ~[\r\n]* -> skip
+    ;
 
 
 //OPAR : '(';
