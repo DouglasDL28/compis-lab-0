@@ -6,24 +6,33 @@ program
     : class_gmr+
     ;
 class_gmr
-    : 'class' TYPE (INHERITS TYPE)? '{' (feature ';')* '}'
+    : CLASS TYPE (INHERITS TYPE)? '{' (feature ';')* '}'
     ;
+
+type: TYPE | SELF_TYPE;
+
+id: ID | TYPE | OBJ_TYPE;
+
 feature
-    : ID '(' (formal (',' formal)*)? ')' ':' TYPE '{' (expr)* '}'
-    | ID ':' TYPE (ASSIGN expr)?
+    : (id '(' (formal (',' formal)*)? ')' ':' type '{' (expr)* '}')
+    | (id ':' type (ASSIGN expr)?)
     ;
 formal
-    : ID ':' TYPE
+    : id ':' type
     ;
+
+
+string: '"' (~(EOF| '"') | '\\')*  '"';
+
 expr
-    : ID ASSIGN expr
-    | expr ('@' TYPE)? '.' ID '(' (expr (',' expr)*)? ')' // expr[@TYPE].ID([expr[, expr]*])
-    | ID '(' ( expr (',' expr)* )? ')' // ID([expr, [,expr]*])
+    : id ASSIGN expr
+    | expr ('@' type)? '.' id '(' (expr (',' expr)*)? ')' // expr[@TYPE].ID([expr[, expr]*])
+    | id '(' ( expr (',' expr)* )? ')' // ID([expr, [,expr]*])
     | IF expr THEN expr ELSE expr FI
     | WHILE expr LOOP expr POOL
     | '{' (expr ';')+ '}'
-    | LET ID ':' TYPE (ASSIGN expr)? (',' ID ':' TYPE (ASSIGN expr)? )* IN expr
-    | NEW TYPE
+    | LET id ':' type (ASSIGN expr)? (',' id ':' type (ASSIGN expr)? )* IN expr
+    | NEW type
     | ISVOID expr
     | expr '+' expr
     | expr '-' expr
@@ -35,12 +44,38 @@ expr
     | expr '=' expr
     | NOT expr
     | '(' expr ')'
-    | ID
+    | id
     | INT
-    | STRING
+    | string
     | TRUE
     | FALSE
+    | SELF
     ;
+
+
+//Fragments
+fragment LOWERCASE  : [a-z] ;
+fragment UPPERCASE  : [A-Z] ;
+fragment NUM_RANGE  : [0-9] ;
+fragment C          : ('C'|'c') ;
+fragment A         : ('A'|'a') ;
+fragment L         : ('L'|'l') ;
+fragment S          : ('S'|'s') ;
+fragment E          : ('E'|'e') ;
+fragment H          : ('H'|'h') ;
+fragment F          : ('F'|'f') ;
+fragment T          : ('T'|'t') ;
+fragment Y          : ('Y'|'y') ;
+fragment I          : ('I'|'i') ;
+fragment P          : ('P'|'p') ;
+fragment O          : ('O'|'o') ;
+fragment V         : ('V'|'v') ;
+fragment N          : ('N'|'n') ;
+fragment W          : ('W'|'w') ;
+fragment D          : ('D'|'d') ;
+fragment R          : ('R'|'r') ;
+fragment U          : ('U'|'u') ;
+
 
 
 // Keywords
@@ -51,40 +86,43 @@ SELF_TYPE
     : 'SELF_TYPE'
     ;
 IF
-    : 'if'
+    : I F
     ;
 NEW
-    : 'new'
+    : N E W
     ;
 ISVOID
-    : 'isvoid'
+    : I S V O I D
     ;
 LET
-    : 'let'
+    : L E T
+    ;
+IN
+    : I N
     ;
 WHILE
-    : 'while'
+    : W H I L E
     ;
 LOOP
-    : 'loop'
+    : L O O P
     ;
 POOL
-    : 'pool'
+    : P O O L
     ;
 ELSE
-    : 'else'
+    : E L S E
     ;
 FI
-    : 'fi'
+    : F I
     ;
 THEN
-    : 'then'
+    : T H E N
     ;
 INHERITS
-    : 'inherits'
+    : I N H E R I T S
     ;
 NOT
-    : 'not'
+    : N O T
     ;
 TRUE
     : 'true'
@@ -96,25 +134,38 @@ ASSIGN
     : '<-'
     ;
 
-// Tokens
+// Lexer rules
+
+
+
+
+CLASS : C L A S S ;
+
 TYPE
-    : [a-zA-Z_] [a-zA-Z_0-9]*
+    : UPPERCASE (UPPERCASE | LOWERCASE | '_' | NUM_RANGE)*
     ;
 OBJ_TYPE
-    : [a-z_] [a-zA-Z_0-9]*
-    ;
+    : LOWERCASE (UPPERCASE | LOWERCASE | '_' | NUM_RANGE )*;
+
+ID
+: (LOWERCASE | UPPERCASE | '_')(LOWERCASE | UPPERCASE | '_' | NUM_RANGE)*
+;
+
+
 INT
-    : [0-9]+
+    : NUM_RANGE+
     ;
-STRING
-    : '"' (~["\r\n] | '""')* '"'
-    ;
-WS
-    : [ \t\r\n] -> skip
-    ;
+
 COMMENT
-    : '#' ~[\r\n]* -> skip
+    : (('(*' .*? '*)')) -> skip
     ;
+
+LINE_COMMENT : ('--' ~('\n')*) -> skip;
+
+WS
+    : ( '\t'| '\r' | '\n' | '\f' | ' ' ) -> skip
+    ;
+
 
 
 //OPAR : '(';
