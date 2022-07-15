@@ -3,10 +3,10 @@ grammar YAPL;
 
 // Productions
 program
-    : class_gmr+
+    : (class_gmr)+
     ;
 class_gmr
-    : CLASS TYPE (INHERITS TYPE)? '{' (feature ';')* '}'
+    : CLASS TYPE (INHERITS TYPE)? '{' (feature ';')* '}' ';'
     ;
 
 type: TYPE | SELF_TYPE;
