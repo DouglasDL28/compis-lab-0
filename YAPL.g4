@@ -11,27 +11,26 @@ class_gmr
 
 type: TYPE | SELF_TYPE;
 
-id: ID | TYPE | OBJ_TYPE;
 
 feature
-    : (id '(' (formal (',' formal)*)? ')' ':' type '{' (expr)* '}')
-    | (id ':' type (ASSIGN expr)?)
+    : (OBJ_TYPE '(' (formal (',' formal)*)? ')' ':' type '{' (expr)* '}')
+    | (OBJ_TYPE ':' type (ASSIGN expr)?)
     ;
 formal
-    : id ':' type
+    : OBJ_TYPE ':' type
     ;
 
 
 string: '"' (~(EOF| '"') | '\\')*  '"';
 
 expr
-    : id ASSIGN expr
-    | expr ('@' type)? '.' id '(' (expr (',' expr)*)? ')' // expr[@TYPE].ID([expr[, expr]*])
-    | id '(' ( expr (',' expr)* )? ')' // ID([expr, [,expr]*])
+    : OBJ_TYPE ASSIGN expr
+    | expr ('@' type)? '.' OBJ_TYPE '(' (expr (',' expr)*)? ')' // expr[@TYPE].ID([expr[, expr]*])
+    | OBJ_TYPE '(' ( expr (',' expr)* )? ')' // ID([expr, [,expr]*])
     | IF expr THEN expr ELSE expr FI
     | WHILE expr LOOP expr POOL
     | '{' (expr ';')+ '}'
-    | LET id ':' type (ASSIGN expr)? (',' id ':' type (ASSIGN expr)? )* IN expr
+    | LET OBJ_TYPE ':' type (ASSIGN expr)? (',' OBJ_TYPE ':' type (ASSIGN expr)? )* IN expr
     | NEW type
     | ISVOID expr
     | expr '+' expr
@@ -44,7 +43,7 @@ expr
     | expr '=' expr
     | NOT expr
     | '(' expr ')'
-    | id
+    | OBJ_TYPE
     | INT
     | string
     | TRUE
@@ -146,10 +145,6 @@ TYPE
     ;
 OBJ_TYPE
     : LOWERCASE (UPPERCASE | LOWERCASE | '_' | NUM_RANGE )*;
-
-ID
-: (LOWERCASE | UPPERCASE | '_')(LOWERCASE | UPPERCASE | '_' | NUM_RANGE)*
-;
 
 
 INT
