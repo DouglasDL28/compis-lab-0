@@ -24,24 +24,25 @@ formal
 string: '"' (~(EOF| '"') | '\\')*  '"';
 
 expr
-    : OBJ_TYPE ASSIGN expr
-    | expr ('@' type)? '.' OBJ_TYPE '(' (expr (',' expr)*)? ')' // expr[@TYPE].ID([expr[, expr]*])
+    :  expr ('@' type)? '.' OBJ_TYPE '(' (expr (',' expr)*)? ')' // expr[@TYPE].ID([expr[, expr]*])
+
     | OBJ_TYPE '(' ( expr (',' expr)* )? ')' // ID([expr, [,expr]*])
     | IF expr THEN expr ELSE expr FI
     | WHILE expr LOOP expr POOL
     | '{' (expr ';')+ '}'
     | LET OBJ_TYPE ':' type (ASSIGN expr)? (',' OBJ_TYPE ':' type (ASSIGN expr)? )* IN expr
     | NEW type
+    | '~' expr
     | ISVOID expr
+    | expr '*' expr
+        | expr '/' expr
     | expr '+' expr
     | expr '-' expr
-    | expr '*' expr
-    | expr '/' expr
-    | '~' expr
     | expr '<' expr
     | expr '<=' expr
     | expr '=' expr
     | NOT expr
+    | OBJ_TYPE ASSIGN expr
     | '(' expr ')'
     | OBJ_TYPE
     | INT
