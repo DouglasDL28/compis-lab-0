@@ -37,16 +37,6 @@ public interface YAPLListener extends ParseTreeListener {
 	 */
 	void exitType(YAPLParser.TypeContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link YAPLParser#id}.
-	 * @param ctx the parse tree
-	 */
-	void enterId(YAPLParser.IdContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link YAPLParser#id}.
-	 * @param ctx the parse tree
-	 */
-	void exitId(YAPLParser.IdContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link YAPLParser#feature}.
 	 * @param ctx the parse tree
 	 */
