@@ -2,8 +2,13 @@
 public class YAPLSymbol {
     private String id;
     private YAPLType type;
-    private int scope;
     private int offset;
+
+    public YAPLSymbol(String id, YAPLType type, int offset) {
+        this.id = id;
+        this.type = type;
+        this.offset = offset;
+    }
 
     public String getId() {
         return id;
@@ -19,14 +24,6 @@ public class YAPLSymbol {
 
     public void setType(YAPLType type) {
         this.type = type;
-    }
-
-    public int getScope() {
-        return scope;
-    }
-
-    public void setScope(int scope) {
-        this.scope = scope;
     }
 
     public int getOffset() {

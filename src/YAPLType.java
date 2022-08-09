@@ -2,10 +2,10 @@ import java.util.HashMap;
 import java.util.Objects;
 
 public class YAPLType {
-    private String id;
-    private HashMap<String, YALPAttribute> attributes;
-    private HashMap<String, YAPLMethod> methods;
-    private YAPLType parent;
+    private final String id;
+    private final HashMap<String, YALPAttribute> attributes;
+    private final HashMap<String, YAPLMethod> methods;
+    private final YAPLType parent;
 
     public YAPLType(String id) {
         this.id = id;
@@ -35,6 +35,23 @@ public class YAPLType {
 
     public YAPLType getParent() {
         return parent;
+    }
+
+    /**
+     * Validates if parent is an ancestor by name. Works recursively.
+     * @param parent YAPLType.
+     * @return boolean
+     */
+    public boolean isAncestor(YAPLType parent) {
+        if (this.parent.equals(parent)) {
+            return true;
+        }
+        // Check up until Object in types tree
+        if (this.parent.getId().equals("Object") && !parent.getId().equals("Object")) {
+            return false;
+        }
+
+        return parent.isAncestor(parent);
     }
 
     @Override

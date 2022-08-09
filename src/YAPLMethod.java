@@ -4,6 +4,14 @@ public class YAPLMethod {
     private String id;
     private YAPLType returnType;
 
+    private List<YAPLType> params;
+
+    public YAPLMethod(String id, YAPLType returnType, List<YAPLType> params) {
+        this.id = id;
+        this.returnType = returnType;
+        this.params = params;
+    }
+
     public String getId() {
         return id;
     }
@@ -16,5 +24,4 @@ public class YAPLMethod {
         return params;
     }
 
-    private List<YAPLType> params;
 }

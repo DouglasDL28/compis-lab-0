@@ -4,13 +4,17 @@ public class YAPLSymbolTable {
     private HashMap<String, YAPLSymbol> symbols;
     private String scope;
 
-    public YAPLSymbolTable(HashMap<String, YAPLSymbol> symbols, String scope) {
+    public YAPLSymbolTable(String scope) {
         this.symbols = new HashMap<String, YAPLSymbol>();
         this.scope = scope;
     }
 
     public void add(YAPLSymbol symbol) {
         this.symbols.put(symbol.getId(), symbol);
+    }
+
+    public String getScope() {
+        return scope;
     }
 
     public YAPLSymbol remove(String id) {
