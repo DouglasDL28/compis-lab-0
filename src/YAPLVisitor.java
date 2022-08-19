@@ -22,19 +22,17 @@ public interface YAPLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitClassDef(YAPLParser.ClassDefContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code funcDef}
-	 * labeled alternative in {@link YAPLParser#feature}.
+	 * Visit a parse tree produced by {@link YAPLParser#funcDef}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitFuncDef(YAPLParser.FuncDefContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code attrDef}
-	 * labeled alternative in {@link YAPLParser#feature}.
+	 * Visit a parse tree produced by {@link YAPLParser#varDef}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitAttrDef(YAPLParser.AttrDefContext ctx);
+	T visitVarDef(YAPLParser.VarDefContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link YAPLParser#formal}.
 	 * @param ctx the parse tree

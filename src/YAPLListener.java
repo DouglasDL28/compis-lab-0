@@ -27,29 +27,25 @@ public interface YAPLListener extends ParseTreeListener {
 	 */
 	void exitClassDef(YAPLParser.ClassDefContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code funcDef}
-	 * labeled alternative in {@link YAPLParser#feature}.
+	 * Enter a parse tree produced by {@link YAPLParser#funcDef}.
 	 * @param ctx the parse tree
 	 */
 	void enterFuncDef(YAPLParser.FuncDefContext ctx);
 	/**
-	 * Exit a parse tree produced by the {@code funcDef}
-	 * labeled alternative in {@link YAPLParser#feature}.
+	 * Exit a parse tree produced by {@link YAPLParser#funcDef}.
 	 * @param ctx the parse tree
 	 */
 	void exitFuncDef(YAPLParser.FuncDefContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code attrDef}
-	 * labeled alternative in {@link YAPLParser#feature}.
+	 * Enter a parse tree produced by {@link YAPLParser#varDef}.
 	 * @param ctx the parse tree
 	 */
-	void enterAttrDef(YAPLParser.AttrDefContext ctx);
+	void enterVarDef(YAPLParser.VarDefContext ctx);
 	/**
-	 * Exit a parse tree produced by the {@code attrDef}
-	 * labeled alternative in {@link YAPLParser#feature}.
+	 * Exit a parse tree produced by {@link YAPLParser#varDef}.
 	 * @param ctx the parse tree
 	 */
-	void exitAttrDef(YAPLParser.AttrDefContext ctx);
+	void exitVarDef(YAPLParser.VarDefContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link YAPLParser#formal}.
 	 * @param ctx the parse tree

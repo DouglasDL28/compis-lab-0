@@ -6,19 +6,15 @@ public class YAPLType {
     private final HashMap<String, YALPAttribute> attributes;
     private final HashMap<String, YAPLMethod> methods;
     private final YAPLType parent;
+    private final int depth;
 
-    public YAPLType(String id) {
-        this.id = id;
-        this.attributes = new HashMap<>();
-        this.methods = new HashMap<>();
-        this.parent = new YAPLType("Object");
-    }
 
-    public YAPLType(String id, YAPLType parent) {
+    public YAPLType(String id, YAPLType parent, int depth) {
         this.id = id;
         this.parent = parent;
         this.attributes = new HashMap<>();
         this.methods = new HashMap<>();
+        this.depth = depth;
     }
 
     public String getId() {
@@ -33,8 +29,15 @@ public class YAPLType {
         return methods;
     }
 
+    public Boolean putMethod() {
+       return true;
+    }
     public YAPLType getParent() {
         return parent;
+    }
+
+    public int getDepth() {
+        return depth;
     }
 
     /**
@@ -42,7 +45,7 @@ public class YAPLType {
      * @param parent YAPLType.
      * @return boolean
      */
-    public boolean isAncestor(YAPLType parent) {
+    public boolean isDescendantOf(YAPLType parent) {
         if (this.parent.equals(parent)) {
             return true;
         }
@@ -51,7 +54,19 @@ public class YAPLType {
             return false;
         }
 
-        return parent.isAncestor(parent);
+        return parent.isDescendantOf(parent);
+    }
+
+    /**
+     * Find common ancestor between two types
+     * @param type
+     * @return common ancestor
+     */
+    public YAPLType commonAncestorWith(YAPLType type) {
+        if (this.parent.equals(type.parent))
+            return this.parent;
+
+        return this.parent.commonAncestorWith(type.parent);
     }
 
     @Override

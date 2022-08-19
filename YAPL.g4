@@ -7,12 +7,20 @@ program
     ;
 
 classDef
-    : CLASS TYPE (INHERITS TYPE)? '{' (feature ';')* '}' ';'
+    : CLASS class_id=TYPE (INHERITS parent=TYPE)? '{' ((funcDef | varDef) ';')* '}' ';'
     ;
 
-feature
-    : (ID '(' (formal (',' formal)*)? ')' ':' TYPE '{' (expr)* '}')                   # funcDef
-    | (ID ':' TYPE (ASSIGN expr)?)                                                    # attrDef
+//feature
+//    : (ID '(' (formal (',' formal)*)? ')' ':' TYPE '{' (expr)* '}')                   # funcDef
+//    | (ID ':' TYPE (ASSIGN expr)?)                                                    # attrDef
+//    ;
+
+funcDef
+    : (ID '(' (formal (',' formal)*)? ')' ':' (TYPE | VOID) '{' (expr)* '}')
+    ;
+
+varDef
+    : ID ':' TYPE (ASSIGN expr)?
     ;
 
 formal
@@ -25,13 +33,14 @@ expr
     | IF expr THEN expr ELSE expr FI                                                    # ifElse
     | WHILE expr LOOP expr POOL                                                         # while
     | '{' (expr ';')+ '}'                                                               # brackets
-    | LET ID ':' TYPE (ASSIGN expr)? (',' ID ':' TYPE (ASSIGN expr)? )* IN expr         # let
+    | LET  varDef (',' varDef)* IN expr                                                 # let
+//    | LET  ID ':' TYPE (ASSIGN expr)? (',' ID ':' TYPE (ASSIGN expr)? )* IN expr        # let
     | NEW TYPE                                                                          # new
     | '~' expr                                                                          # not
     | ISVOID expr                                                                       # isvoid
-    | expr op=('*'|'/') expr                                                            # MulDiv
-    | expr op=('+'|'-') expr                                                            # AddSub
-    | expr op=('<'|'<='|'=') expr                                                       # Comp
+    | expr1=expr op=('*'|'/') expr2=expr                                                            # MulDiv
+    | expr1=expr op=('+'|'-') expr2=expr                                                            # AddSub
+    | expr1=expr op=('<'|'<='|'=') expr2=expr                                                       # Comp
     | NOT expr                                                                          # not
     | ID ASSIGN expr                                                                    # assign
     | '(' expr ')'                                                                      # parens
@@ -41,6 +50,7 @@ expr
     | TRUE                                                                              # true
     | FALSE                                                                             # false
     | SELF                                                                              # self
+//    | VOID                                                                              # void
     ;
 
 
@@ -78,6 +88,10 @@ EQ: '=';
 // Keywords
 SELF
     : 'self'
+    ;
+
+VOID
+    : V O I D
     ;
 
 IF

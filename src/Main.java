@@ -21,9 +21,20 @@ public class Main {
 
         ParseTree tree = parser.program(); // parse
 
-        YAPLSemanticVisitor test = new YAPLSemanticVisitor();
+        YAPLTypesTable types = new YAPLTypesTable();
+        YAPLTypesVisitor typesVisitor = new YAPLTypesVisitor(types);
+        typesVisitor.visit(tree);
 
-        test.visit(tree);
+        System.out.println("Size:" + types.size());
+
+        System.out.println(types.containsType("Test"));
+
+        YAPLSemanticVisitor semVisitor = new YAPLSemanticVisitor(types);
+
+
+
+        semVisitor.visit(tree);
+
 //        YAPLLexer lexer = new YAPLLexer(CharStreams.fromFileName("../../../pruebas_YAPL/hello_world.cl"));
 //        YAPLParser parser = new YAPLParser(new CommonTokenStream(lexer));
 //        Integer sum = new SumVisitor().visit(parser.YAPL());

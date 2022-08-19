@@ -1,8 +1,8 @@
 import java.util.List;
 
 public class YAPLMethod {
-    private String id;
-    private YAPLType returnType;
+    private final String id;
+    private final YAPLType returnType;
 
     private List<YAPLType> params;
 
@@ -24,4 +24,13 @@ public class YAPLMethod {
         return params;
     }
 
+
+    @Override
+    public String toString() {
+        return "YAPLMethod{" +
+                "id='" + id + '\'' +
+                ", returnType=" + returnType.getId() +
+                ", params=" + params.toString() +
+                '}';
+    }
 }

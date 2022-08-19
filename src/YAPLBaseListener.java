@@ -51,13 +51,13 @@ public class YAPLBaseListener implements YAPLListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterAttrDef(YAPLParser.AttrDefContext ctx) { }
+	@Override public void enterVarDef(YAPLParser.VarDefContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitAttrDef(YAPLParser.AttrDefContext ctx) { }
+	@Override public void exitVarDef(YAPLParser.VarDefContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

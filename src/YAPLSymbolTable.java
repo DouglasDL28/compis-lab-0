@@ -21,7 +21,11 @@ public class YAPLSymbolTable {
         return this.symbols.remove(id);
     }
 
-    public boolean lookup(String id) {
-        return this.symbols.containsKey(id) ? true : false;
+    public boolean contains(String id) {
+        return this.symbols.containsKey(id);
+    }
+
+    public YAPLSymbol get(String id) {
+        return symbols.get(id);
     }
 }
