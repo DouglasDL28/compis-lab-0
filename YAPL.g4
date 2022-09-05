@@ -7,7 +7,7 @@ program
     ;
 
 classDef
-    : CLASS class_id=TYPE (INHERITS parent=TYPE)? '{' ((funcDef | varDef) ';')* '}' ';'
+    : CLASS classId=TYPE (INHERITS parentId=TYPE)? '{' ((funcDef | varDef) ';')* '}' ';'
     ;
 
 //feature
@@ -36,12 +36,12 @@ expr
     | LET  varDef (',' varDef)* IN expr                                                 # let
 //    | LET  ID ':' TYPE (ASSIGN expr)? (',' ID ':' TYPE (ASSIGN expr)? )* IN expr        # let
     | NEW TYPE                                                                          # new
-    | '~' expr                                                                          # not
+    | op='~' expr                                                                          # intComplement
     | ISVOID expr                                                                       # isvoid
-    | expr1=expr op=('*'|'/') expr2=expr                                                            # MulDiv
-    | expr1=expr op=('+'|'-') expr2=expr                                                            # AddSub
-    | expr1=expr op=('<'|'<='|'=') expr2=expr                                                       # Comp
-    | NOT expr                                                                          # not
+    | expr1=expr op=('*'|'/') expr2=expr                                                # MulDiv
+    | expr1=expr op=('+'|'-') expr2=expr                                                # AddSub
+    | expr1=expr op=('<'|'<='|'=') expr2=expr                                           # Comp
+    | op=NOT expr                                                                          # boolComplement
     | ID ASSIGN expr                                                                    # assign
     | '(' expr ')'                                                                      # parens
     | ID                                                                                # id
@@ -180,7 +180,7 @@ LINE_COMMENT : ('--' ~('\n')*) -> skip;
 
 WS : ( '\t'| '\r' | '\n' | '\f' | ' ' ) -> skip;
 
-
+Char : ~["\\\r\n] | '\\';
 
 //OPAR : '(';
 //CPAR : ')';

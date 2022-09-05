@@ -1,4 +1,4 @@
-// Generated from YAPL.g4 by ANTLR 4.10.1
+package compis.lab0;// Generated from YAPL.g4 by ANTLR 4.10.1
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**
@@ -201,17 +201,29 @@ public interface YAPLListener extends ParseTreeListener {
 	 */
 	void exitComp(YAPLParser.CompContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code not}
+	 * Enter a parse tree produced by the {@code intComplement}
 	 * labeled alternative in {@link YAPLParser#expr}.
 	 * @param ctx the parse tree
 	 */
-	void enterNot(YAPLParser.NotContext ctx);
+	void enterIntComplement(YAPLParser.IntComplementContext ctx);
 	/**
-	 * Exit a parse tree produced by the {@code not}
+	 * Exit a parse tree produced by the {@code intComplement}
 	 * labeled alternative in {@link YAPLParser#expr}.
 	 * @param ctx the parse tree
 	 */
-	void exitNot(YAPLParser.NotContext ctx);
+	void exitIntComplement(YAPLParser.IntComplementContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code boolComplement}
+	 * labeled alternative in {@link YAPLParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterBoolComplement(YAPLParser.BoolComplementContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code boolComplement}
+	 * labeled alternative in {@link YAPLParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitBoolComplement(YAPLParser.BoolComplementContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code true}
 	 * labeled alternative in {@link YAPLParser#expr}.

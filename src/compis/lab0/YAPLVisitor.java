@@ -1,4 +1,4 @@
-// Generated from YAPL.g4 by ANTLR 4.10.1
+package compis.lab0;// Generated from YAPL.g4 by ANTLR 4.10.1
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
 /**
@@ -124,12 +124,19 @@ public interface YAPLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitComp(YAPLParser.CompContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code not}
+	 * Visit a parse tree produced by the {@code intComplement}
 	 * labeled alternative in {@link YAPLParser#expr}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitNot(YAPLParser.NotContext ctx);
+	T visitIntComplement(YAPLParser.IntComplementContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code boolComplement}
+	 * labeled alternative in {@link YAPLParser#expr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitBoolComplement(YAPLParser.BoolComplementContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code true}
 	 * labeled alternative in {@link YAPLParser#expr}.

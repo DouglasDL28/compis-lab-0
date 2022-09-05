@@ -7,7 +7,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module-library">
+    <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
           <root url="jar:///usr/local/lib/antlr-4.10.1-complete.jar!/" />
@@ -16,5 +16,10 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" exported="" name="openjfx.javafx.graphics" level="project" />
+    <orderEntry type="library" exported="" name="openjfx.javafx.fxml" level="project" />
+    <orderEntry type="library" exported="" name="openjfx.javafx.controls" level="project" />
+    <orderEntry type="library" exported="" name="reactfx" level="project" />
+    <orderEntry type="library" exported="" name="fxmisc.richtext.richtextfx" level="project" />
   </component>
 </module>

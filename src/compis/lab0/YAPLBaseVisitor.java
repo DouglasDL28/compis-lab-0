@@ -1,4 +1,4 @@
-// Generated from YAPL.g4 by ANTLR 4.10.1
+package compis.lab0;// Generated from YAPL.g4 by ANTLR 4.10.1
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
 /**
@@ -135,7 +135,14 @@ public class YAPLBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements Y
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitNot(YAPLParser.NotContext ctx) { return visitChildren(ctx); }
+	@Override public T visitIntComplement(YAPLParser.IntComplementContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitBoolComplement(YAPLParser.BoolComplementContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

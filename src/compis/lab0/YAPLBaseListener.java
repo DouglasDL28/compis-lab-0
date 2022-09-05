@@ -1,4 +1,4 @@
-// Generated from YAPL.g4 by ANTLR 4.10.1
+package compis.lab0;// Generated from YAPL.g4 by ANTLR 4.10.1
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -219,13 +219,25 @@ public class YAPLBaseListener implements YAPLListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterNot(YAPLParser.NotContext ctx) { }
+	@Override public void enterIntComplement(YAPLParser.IntComplementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitNot(YAPLParser.NotContext ctx) { }
+	@Override public void exitIntComplement(YAPLParser.IntComplementContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterBoolComplement(YAPLParser.BoolComplementContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitBoolComplement(YAPLParser.BoolComplementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

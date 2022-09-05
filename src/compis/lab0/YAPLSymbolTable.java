@@ -1,3 +1,5 @@
+package compis.lab0;
+
 import java.util.HashMap;
 
 public class YAPLSymbolTable {

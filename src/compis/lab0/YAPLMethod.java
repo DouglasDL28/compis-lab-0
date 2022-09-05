@@ -1,15 +1,27 @@
+package compis.lab0;
+
 import java.util.List;
 
 public class YAPLMethod {
     private final String id;
-    private final YAPLType returnType;
+    private YAPLType returnType;
+    private boolean returnsSelfType = false;
+    private final List<YAPLType> params;
 
-    private List<YAPLType> params;
 
-    public YAPLMethod(String id, YAPLType returnType, List<YAPLType> params) {
+    public YAPLMethod(String id, YAPLType returnType, List<YAPLType> params, boolean returnsSelfType) {
         this.id = id;
         this.returnType = returnType;
         this.params = params;
+        this.returnsSelfType = returnsSelfType;
+    }
+
+    public boolean returnsSelfType() {
+        return this.returnsSelfType;
+    }
+
+    public void setReturnType(YAPLType returnType) {
+        this.returnType = returnType;
     }
 
     public String getId() {
@@ -32,5 +44,9 @@ public class YAPLMethod {
                 ", returnType=" + returnType.getId() +
                 ", params=" + params.toString() +
                 '}';
+    }
+
+    public void setReturnsSelfType(boolean returnsSelfType) {
+        this.returnsSelfType = returnsSelfType;
     }
 }

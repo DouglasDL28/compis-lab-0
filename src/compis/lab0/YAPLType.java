@@ -1,3 +1,5 @@
+package compis.lab0;
+
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -5,8 +7,8 @@ public class YAPLType {
     private final String id;
     private final HashMap<String, YALPAttribute> attributes;
     private final HashMap<String, YAPLMethod> methods;
-    private final YAPLType parent;
-    private final int depth;
+    private YAPLType parent;
+    private int depth;
 
 
     public YAPLType(String id, YAPLType parent, int depth) {
@@ -40,31 +42,57 @@ public class YAPLType {
         return depth;
     }
 
+    public void setParent(YAPLType parent) {
+        this.parent = parent;
+    }
+
+    public void setDepth(int depth) {
+        this.depth = depth;
+    }
+
     /**
      * Validates if parent is an ancestor by name. Works recursively.
      * @param parent YAPLType.
      * @return boolean
      */
-    public boolean isDescendantOf(YAPLType parent) {
-        if (this.parent.equals(parent)) {
-            return true;
-        }
+    public boolean isDescendantOf(YAPLType typeToCheck) {
         // Check up until Object in types tree
-        if (this.parent.getId().equals("Object") && !parent.getId().equals("Object")) {
+
+
+        // Object is not descendant of anyone
+        if (this.getId().equals("Object")) {
             return false;
         }
 
-        return parent.isDescendantOf(parent);
+        // found typeToCheck in type's ancestors
+        if (this.parent.equals(typeToCheck)) {
+            return true;
+        }
+
+        return this.parent.isDescendantOf(typeToCheck);
     }
 
     /**
+     * TODO: tomar en cuenta depth.
      * Find common ancestor between two types
      * @param type
      * @return common ancestor
      */
     public YAPLType commonAncestorWith(YAPLType type) {
-        if (this.parent.equals(type.parent))
-            return this.parent;
+        System.out.println("Finding common ancestor of " + this.id + " and " + type.getId());
+
+        if (this.equals(type)) {
+            System.out.println("Common ancestor: " + this.getId());
+            return this;
+        }
+
+        if (this.getDepth() > type.getDepth()) {
+            return this.parent.commonAncestorWith(type);
+        }
+
+        if (this.getDepth() < type.getDepth()) {
+            return this.commonAncestorWith(type.parent);
+        }
 
         return this.parent.commonAncestorWith(type.parent);
     }
@@ -75,6 +103,17 @@ public class YAPLType {
         if (o == null || getClass() != o.getClass()) return false;
         YAPLType yaplType = (YAPLType) o;
         return id.equals(yaplType.id);
+    }
+
+    @Override
+    public String toString() {
+        return "YAPLType{" +
+                "id='" + id + '\'' +
+                ", attributes=" + attributes +
+                ", methods=" + methods +
+                ", parent=" + parent +
+                ", depth=" + depth +
+                '}';
     }
 
     @Override

@@ -1,3 +1,4 @@
+package compis.lab0;
 
 public class YAPLSymbol {
     private String id;

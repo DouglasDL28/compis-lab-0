@@ -1,12 +1,9 @@
-// Generated from YAPL.g4 by ANTLR 4.10.1
+package compis.lab0;// Generated from YAPL.g4 by ANTLR 4.10.1
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.misc.*;
 import org.antlr.v4.runtime.tree.*;
 import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
 public class YAPLParser extends Parser {
@@ -21,7 +18,7 @@ public class YAPLParser extends Parser {
 		EQ=19, SELF=20, VOID=21, IF=22, NEW=23, ISVOID=24, LET=25, IN=26, WHILE=27, 
 		LOOP=28, POOL=29, ELSE=30, FI=31, THEN=32, INHERITS=33, NOT=34, TRUE=35, 
 		FALSE=36, ASSIGN=37, CLASS=38, TYPE=39, ID=40, INT=41, COMMENT=42, LINE_COMMENT=43, 
-		WS=44;
+		WS=44, Char=45;
 	public static final int
 		RULE_program = 0, RULE_classDef = 1, RULE_funcDef = 2, RULE_varDef = 3, 
 		RULE_formal = 4, RULE_expr = 5;
@@ -47,7 +44,7 @@ public class YAPLParser extends Parser {
 			null, "MUL", "DIV", "ADD", "SUB", "LT", "LTE", "EQ", "SELF", "VOID", 
 			"IF", "NEW", "ISVOID", "LET", "IN", "WHILE", "LOOP", "POOL", "ELSE", 
 			"FI", "THEN", "INHERITS", "NOT", "TRUE", "FALSE", "ASSIGN", "CLASS", 
-			"TYPE", "ID", "INT", "COMMENT", "LINE_COMMENT", "WS"
+			"TYPE", "ID", "INT", "COMMENT", "LINE_COMMENT", "WS", "Char"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -165,6 +162,8 @@ public class YAPLParser extends Parser {
 	}
 
 	public static class ClassDefContext extends ParserRuleContext {
+		public Token classId;
+		public Token parentId;
 		public TerminalNode CLASS() { return getToken(YAPLParser.CLASS, 0); }
 		public List<TerminalNode> TYPE() { return getTokens(YAPLParser.TYPE); }
 		public TerminalNode TYPE(int i) {
@@ -212,7 +211,7 @@ public class YAPLParser extends Parser {
 			setState(19);
 			match(CLASS);
 			setState(20);
-			match(TYPE);
+			((ClassDefContext)_localctx).classId = match(TYPE);
 			setState(23);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
@@ -221,7 +220,7 @@ public class YAPLParser extends Parser {
 				setState(21);
 				match(INHERITS);
 				setState(22);
-				match(TYPE);
+				((ClassDefContext)_localctx).parentId = match(TYPE);
 				}
 			}
 
@@ -573,7 +572,9 @@ public class YAPLParser extends Parser {
 		}
 	}
 	public static class MulDivContext extends ExprContext {
+		public ExprContext expr1;
 		public Token op;
+		public ExprContext expr2;
 		public List<ExprContext> expr() {
 			return getRuleContexts(ExprContext.class);
 		}
@@ -598,7 +599,9 @@ public class YAPLParser extends Parser {
 		}
 	}
 	public static class AddSubContext extends ExprContext {
+		public ExprContext expr1;
 		public Token op;
+		public ExprContext expr2;
 		public List<ExprContext> expr() {
 			return getRuleContexts(ExprContext.class);
 		}
@@ -747,7 +750,9 @@ public class YAPLParser extends Parser {
 		}
 	}
 	public static class CompContext extends ExprContext {
+		public ExprContext expr1;
 		public Token op;
+		public ExprContext expr2;
 		public List<ExprContext> expr() {
 			return getRuleContexts(ExprContext.class);
 		}
@@ -772,23 +777,44 @@ public class YAPLParser extends Parser {
 			else return visitor.visitChildren(this);
 		}
 	}
-	public static class NotContext extends ExprContext {
+	public static class IntComplementContext extends ExprContext {
+		public Token op;
+		public ExprContext expr() {
+			return getRuleContext(ExprContext.class,0);
+		}
+		public IntComplementContext(ExprContext ctx) { copyFrom(ctx); }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof YAPLListener ) ((YAPLListener)listener).enterIntComplement(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof YAPLListener ) ((YAPLListener)listener).exitIntComplement(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof YAPLVisitor ) return ((YAPLVisitor<? extends T>)visitor).visitIntComplement(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	public static class BoolComplementContext extends ExprContext {
+		public Token op;
 		public ExprContext expr() {
 			return getRuleContext(ExprContext.class,0);
 		}
 		public TerminalNode NOT() { return getToken(YAPLParser.NOT, 0); }
-		public NotContext(ExprContext ctx) { copyFrom(ctx); }
+		public BoolComplementContext(ExprContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof YAPLListener ) ((YAPLListener)listener).enterNot(this);
+			if ( listener instanceof YAPLListener ) ((YAPLListener)listener).enterBoolComplement(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof YAPLListener ) ((YAPLListener)listener).exitNot(this);
+			if ( listener instanceof YAPLListener ) ((YAPLListener)listener).exitBoolComplement(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof YAPLVisitor ) return ((YAPLVisitor<? extends T>)visitor).visitNot(this);
+			if ( visitor instanceof YAPLVisitor ) return ((YAPLVisitor<? extends T>)visitor).visitBoolComplement(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1110,11 +1136,11 @@ public class YAPLParser extends Parser {
 				break;
 			case 7:
 				{
-				_localctx = new NotContext(_localctx);
+				_localctx = new IntComplementContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
 				setState(127);
-				match(T__9);
+				((IntComplementContext)_localctx).op = match(T__9);
 				setState(128);
 				expr(14);
 				}
@@ -1132,11 +1158,11 @@ public class YAPLParser extends Parser {
 				break;
 			case 9:
 				{
-				_localctx = new NotContext(_localctx);
+				_localctx = new BoolComplementContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
 				setState(131);
-				match(NOT);
+				((BoolComplementContext)_localctx).op = match(NOT);
 				setState(132);
 				expr(9);
 				}
@@ -1195,7 +1221,7 @@ public class YAPLParser extends Parser {
 				setState(147);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__0) | (1L << T__1) | (1L << T__2) | (1L << T__3) | (1L << T__4) | (1L << T__5) | (1L << T__6) | (1L << T__7) | (1L << T__8) | (1L << T__9) | (1L << T__11) | (1L << MUL) | (1L << DIV) | (1L << ADD) | (1L << SUB) | (1L << LT) | (1L << LTE) | (1L << EQ) | (1L << SELF) | (1L << VOID) | (1L << IF) | (1L << NEW) | (1L << ISVOID) | (1L << LET) | (1L << IN) | (1L << WHILE) | (1L << LOOP) | (1L << POOL) | (1L << ELSE) | (1L << FI) | (1L << THEN) | (1L << INHERITS) | (1L << NOT) | (1L << TRUE) | (1L << FALSE) | (1L << ASSIGN) | (1L << CLASS) | (1L << TYPE) | (1L << ID) | (1L << INT) | (1L << COMMENT) | (1L << LINE_COMMENT) | (1L << WS))) != 0)) {
+				while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__0) | (1L << T__1) | (1L << T__2) | (1L << T__3) | (1L << T__4) | (1L << T__5) | (1L << T__6) | (1L << T__7) | (1L << T__8) | (1L << T__9) | (1L << T__11) | (1L << MUL) | (1L << DIV) | (1L << ADD) | (1L << SUB) | (1L << LT) | (1L << LTE) | (1L << EQ) | (1L << SELF) | (1L << VOID) | (1L << IF) | (1L << NEW) | (1L << ISVOID) | (1L << LET) | (1L << IN) | (1L << WHILE) | (1L << LOOP) | (1L << POOL) | (1L << ELSE) | (1L << FI) | (1L << THEN) | (1L << INHERITS) | (1L << NOT) | (1L << TRUE) | (1L << FALSE) | (1L << ASSIGN) | (1L << CLASS) | (1L << TYPE) | (1L << ID) | (1L << INT) | (1L << COMMENT) | (1L << LINE_COMMENT) | (1L << WS) | (1L << Char))) != 0)) {
 					{
 					setState(145);
 					_errHandler.sync(this);
@@ -1273,6 +1299,7 @@ public class YAPLParser extends Parser {
 					case 1:
 						{
 						_localctx = new MulDivContext(new ExprContext(_parentctx, _parentState));
+						((MulDivContext)_localctx).expr1 = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(156);
 						if (!(precpred(_ctx, 12))) throw new FailedPredicateException(this, "precpred(_ctx, 12)");
@@ -1288,12 +1315,13 @@ public class YAPLParser extends Parser {
 							consume();
 						}
 						setState(158);
-						expr(13);
+						((MulDivContext)_localctx).expr2 = expr(13);
 						}
 						break;
 					case 2:
 						{
 						_localctx = new AddSubContext(new ExprContext(_parentctx, _parentState));
+						((AddSubContext)_localctx).expr1 = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(159);
 						if (!(precpred(_ctx, 11))) throw new FailedPredicateException(this, "precpred(_ctx, 11)");
@@ -1309,12 +1337,13 @@ public class YAPLParser extends Parser {
 							consume();
 						}
 						setState(161);
-						expr(12);
+						((AddSubContext)_localctx).expr2 = expr(12);
 						}
 						break;
 					case 3:
 						{
 						_localctx = new CompContext(new ExprContext(_parentctx, _parentState));
+						((CompContext)_localctx).expr1 = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(162);
 						if (!(precpred(_ctx, 10))) throw new FailedPredicateException(this, "precpred(_ctx, 10)");
@@ -1330,7 +1359,7 @@ public class YAPLParser extends Parser {
 							consume();
 						}
 						setState(164);
-						expr(11);
+						((CompContext)_localctx).expr2 = expr(11);
 						}
 						break;
 					case 4:
@@ -1429,7 +1458,7 @@ public class YAPLParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\u0004\u0001,\u00be\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
+		"\u0004\u0001-\u00be\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
 		"\u0002\u0007\u0002\u0002\u0003\u0007\u0003\u0002\u0004\u0007\u0004\u0002"+
 		"\u0005\u0007\u0005\u0001\u0000\u0004\u0000\u000e\b\u0000\u000b\u0000\f"+
 		"\u0000\u000f\u0001\u0000\u0001\u0000\u0001\u0001\u0001\u0001\u0001\u0001"+
