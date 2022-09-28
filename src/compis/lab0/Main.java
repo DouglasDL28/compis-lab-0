@@ -51,19 +51,10 @@ public class Main {
 
         if (errors.size() > 0) {
             System.out.println("Detected " + errors.size() + " errors.");
-//            for (YAPLSemError error : errors) {
-//                System.out.println("SemError! In line " + error.getLine() + " in position " + error.getPos() + ". " + error.getDescription());
-//            }
         } else {
             System.out.println("\n");
             System.out.println("Compiled successfully!");
         }
 
-
-//        YAPLLexer lexer = new YAPLLexer(CharStreams.fromFileName("../../../pruebas_YAPL/hello_world.cl"));
-//        YAPLParser parser = new YAPLParser(new CommonTokenStream(lexer));
-//        Integer sum = new SumVisitor().visit(parser.YAPL());
-
-//        System.out.println("sum=" + sum);
     }
 }

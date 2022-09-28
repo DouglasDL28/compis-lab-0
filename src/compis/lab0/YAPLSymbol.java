@@ -3,11 +3,13 @@ package compis.lab0;
 public class YAPLSymbol {
     private String id;
     private YAPLType type;
+    private final int width;
     private int offset;
 
-    public YAPLSymbol(String id, YAPLType type, int offset) {
+    public YAPLSymbol(String id, YAPLType type, int width, int offset) {
         this.id = id;
         this.type = type;
+        this.width = width;
         this.offset = offset;
     }
 
@@ -31,7 +33,5 @@ public class YAPLSymbol {
         return offset;
     }
 
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
+    public int getWidth() { return this.width; }
 }

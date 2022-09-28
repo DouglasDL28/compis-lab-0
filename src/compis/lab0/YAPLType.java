@@ -9,6 +9,7 @@ public class YAPLType {
     private final HashMap<String, YAPLMethod> methods;
     private YAPLType parent;
     private int depth;
+    private int width = 8;
 
 
     public YAPLType(String id, YAPLType parent, int depth) {
@@ -17,6 +18,15 @@ public class YAPLType {
         this.attributes = new HashMap<>();
         this.methods = new HashMap<>();
         this.depth = depth;
+    }
+
+    public YAPLType(String id, YAPLType parent, int depth, int width) {
+        this.id = id;
+        this.parent = parent;
+        this.attributes = new HashMap<>();
+        this.methods = new HashMap<>();
+        this.depth = depth;
+        this.width = width;
     }
 
     public String getId() {
@@ -95,6 +105,10 @@ public class YAPLType {
         }
 
         return this.parent.commonAncestorWith(type.parent);
+    }
+
+    public int getWidth() {
+        return width;
     }
 
     @Override

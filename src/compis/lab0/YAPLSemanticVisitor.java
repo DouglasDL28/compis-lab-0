@@ -41,9 +41,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
         for (int i=this.scopes.size()-1; i>=0; i--) {
             YAPLSymbolTable symTable = this.scopes.get(i);
 
-            System.out.println("Searching for " + id + " in scope " + symTable.getScope() + ".");
             if (symTable.contains(id)) {
-                System.out.println("Found " + id + " in scope " + symTable.getScope() + ".");
                 return symTable.get(id);
             }
         }
@@ -73,17 +71,11 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitProgram(YAPLParser.ProgramContext ctx) {
-        System.out.println("visitProgram");
         this.scopes.push(new YAPLSymbolTable("global"));
 
         YAPLType semAnalysis = null;
         for (int i=0; i<ctx.classDef().size(); i++) {
             semAnalysis = visit(ctx.classDef(i));
-            System.out.println(semAnalysis.getId());
-
-            if (semAnalysis.equals(this.types.getType("SemError"))) {
-                System.out.println("Error");
-            }
         }
 
         if (!this.types.containsType("Main")) {
@@ -105,8 +97,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitClassDef(YAPLParser.ClassDefContext ctx) {
-        System.out.println("visitClassDef " + ctx.classId.getText());
-
 
         YAPLType parent = this.objectType;
 
@@ -136,8 +126,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
             }
 
         }
-
-        System.out.println("Parent of " + ctx.classId.getText() + ": " + parent.getId());
 
         YAPLType newClass = this.types.getType(ctx.classId.getText());
         newClass.setParent(parent);
@@ -200,9 +188,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
         String returnTypeId = ctx.TYPE().getText();
 
 
-        System.out.println("visitFuncDef: " + funcId);
-
-
         // Create params list with formals
 
         String signature = funcId + "(";
@@ -222,8 +207,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
             this.scopes.peek().add(new YAPLSymbol(id, this.types.getType(type), 0));
         }
         signature = signature + ")";
-
-        System.out.println(signature);
 
         YAPLMethod method = this.currentClass.getMethods().get(signature);
 
@@ -254,8 +237,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     public YAPLType visitVarDef(YAPLParser.VarDefContext ctx) {
         String id = ctx.ID().getText();
         String typeId = ctx.TYPE().getText();
-
-        System.out.println("visitVarDef " + id + " : " + typeId); // debugging
 
         YAPLType varType = this.types.getType(typeId);
 
@@ -303,7 +284,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitFormal(YAPLParser.FormalContext ctx) {
-        System.out.println("visitFormal: " + ctx.ID().getText());
         return super.visitFormal(ctx);
     }
 
@@ -317,8 +297,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitMulDiv(YAPLParser.MulDivContext ctx) {
-        System.out.println("visitMulDiv: " + ctx.getText());
-
         YAPLType left = visit(ctx.expr1); // left expr
         YAPLType right = visit(ctx.expr2); // right expr
 
@@ -345,8 +323,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitAddSub(YAPLParser.AddSubContext ctx) {
-        System.out.println("visitAddSub: " + ctx.getText());
-
         YAPLType left = visit(ctx.expr1); // left expr
         YAPLType right = visit(ctx.expr2); // right expr
 
@@ -371,7 +347,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitSelf(YAPLParser.SelfContext ctx) {
-        System.out.println("visitSelf: " + currentClass.getId());
         return this.currentClass;
     }
 
@@ -382,7 +357,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitFalse(YAPLParser.FalseContext ctx) {
-        System.out.println("visitFalse: " + ctx.getText());
         return this.boolType;
     }
 
@@ -393,7 +367,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitTrue(YAPLParser.TrueContext ctx) {
-        System.out.println("visitTrue: " + ctx.getText());
         return this.boolType;
     }
 
@@ -404,7 +377,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitString(YAPLParser.StringContext ctx) {
-        System.out.println("visitString: " + ctx.getText());
         return this.stringType;
     }
 
@@ -415,8 +387,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitNew(YAPLParser.NewContext ctx) {
-        System.out.println("visitNew: "  + ctx.getText());
-
         if (!this.types.containsType(ctx.TYPE().getText())) {
             this.createNewError(
                     ctx.TYPE().getSymbol().getLine(),
@@ -438,7 +408,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitParens(YAPLParser.ParensContext ctx) {
-        System.out.println("visitParens");
         return visit(ctx.expr());
     }
 
@@ -449,8 +418,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitIsvoid(YAPLParser.IsvoidContext ctx) {
-        System.out.println("visitIsVoid");
-
         return this.boolType;
     }
 
@@ -461,7 +428,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitInteger(YAPLParser.IntegerContext ctx) {
-        System.out.println("visitInteger: " + ctx.getText());
         return this.intType;
     }
 
@@ -496,22 +462,20 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     @Override
     public YAPLType visitDeclaration(YAPLParser.DeclarationContext ctx) {
         String methodId = ctx.ID().getText();
-        System.out.println("visitDeclaration: " + methodId);
 
-        String signature = methodId + "(";
+        StringBuilder signature = new StringBuilder(methodId + "(");
         for (int i=0; i < ctx.expr().size(); i++) {
             YAPLType paramType = visit(ctx.expr(i));
 
             if (i < ctx.expr().size()-1) {
-                signature = signature + paramType.getId() + ", ";
+                signature.append(paramType.getId()).append(", ");
             } else {
-                signature = signature + paramType.getId();
+                signature.append(paramType.getId());
             }
         }
-        signature = signature + ")";
+        signature.append(")");
 
-        if (!this.currentClass.getMethods().containsKey(signature)) {
-            System.out.println(ctx.getText());
+        if (!this.currentClass.getMethods().containsKey(signature.toString())) {
             this.createNewError(
                     ctx.ID().getSymbol().getLine(),
                     ctx.ID().getSymbol().getCharPositionInLine(),
@@ -521,7 +485,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
             return this.objectType;
         }
 
-        return this.currentClass.getMethods().get(signature).getReturnType();
+        return this.currentClass.getMethods().get(signature.toString()).getReturnType();
     }
 
     /**
@@ -531,8 +495,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitBrackets(YAPLParser.BracketsContext ctx) {
-        System.out.println("visitBrackets");
-
         YAPLType returnType = this.objectType; // default
         for (int i=0; i<ctx.expr().size(); i++) {
             if (i < ctx.expr().size()-1) {
@@ -553,7 +515,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitComp(YAPLParser.CompContext ctx) {
-        System.out.println("visitComp: " + ctx.getText());
         YAPLType leftChild = visit(ctx.expr(0)); // left expr
         YAPLType rightChild = visit(ctx.expr(1)); // right expr
 
@@ -582,7 +543,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitIntComplement(YAPLParser.IntComplementContext ctx) {
-        System.out.println("visitIntComplement: " + ctx.getText());
         // bool
         YAPLType exprType = visit(ctx.expr());
 
@@ -607,7 +567,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitBoolComplement(YAPLParser.BoolComplementContext ctx) {
-        System.out.println("visitBoolComplement: " + ctx.getText());
         // bool
         YAPLType exprType = visit(ctx.expr());
 
@@ -630,8 +589,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitLet(YAPLParser.LetContext ctx) {
-        System.out.println("visitLet: ");
-
         // add new scope for let
         this.scopes.push(new YAPLSymbolTable("let"));
 
@@ -696,7 +653,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitId(YAPLParser.IdContext ctx) {
-        System.out.println("visitId: " + ctx.getText());
         String id = ctx.ID().getText();
 
         YAPLSymbol symbol = getSymbol(id);
@@ -721,8 +677,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitFuncCall(YAPLParser.FuncCallContext ctx) {
-        System.out.println("visitFuncCall: " + ctx.getText());
-
         YAPLType exprType = visit(ctx.expr(0));
 
         // Validate type
@@ -732,20 +686,20 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
 
         String id = ctx.ID().getText();
 
-        String signature = id + "(";
+        StringBuilder signature = new StringBuilder(id + "(");
         for (int i=1; i < ctx.expr().size(); i++) {
             YAPLType paramType = visit(ctx.expr(i));
 
             if (i < ctx.expr().size()-1) {
-                signature = signature + paramType.getId() + ", ";
+                signature.append(paramType.getId()).append(", ");
             } else {
-                signature = signature + paramType.getId();
+                signature.append(paramType.getId());
             }
         }
-        signature = signature + ")";
+        signature.append(")");
 
 
-        if (!exprType.getMethods().containsKey(signature)) {
+        if (!exprType.getMethods().containsKey(signature.toString())) {
             this.createNewError(
                     ctx.expr(0).getStart().getLine(),
                     ctx.expr(0).getStart().getCharPositionInLine(),
@@ -755,32 +709,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
             return this.objectType;
         }
 
-        YAPLMethod method = exprType.getMethods().get(signature);
-//
-//        // evaluate params
-//        int paramsCount = 0;
-//        for (int i=1; i < ctx.expr().size(); i++) {
-//            YAPLType paramType = params.get(i);
-//            YAPLType expectedType = method.getParams().get(i-1);
-//
-//            if (!isValidAssignment(paramType, expectedType)) {
-//                this.createNewError(
-//                        ctx.expr(i).getStart().getLine(),
-//                        ctx.expr(i).getStart().getCharPositionInLine(),
-//                        "Expected " + expectedType.getId() + "."
-//                );
-//            }
-//            paramsCount++;
-//        }
-//
-//        // Validate params count
-//        if (paramsCount != method.getParams().size()) {
-//            this.createNewError(
-//                    ctx.ID().getSymbol().getLine(),
-//                    ctx.ID().getSymbol().getCharPositionInLine(),
-//                    id + " expected " + method.getParams().size() + " parameters but got " + paramsCount + "."
-//            );
-//        }
+        YAPLMethod method = exprType.getMethods().get(signature.toString());
 
         return method.getReturnType();
     }
@@ -816,8 +745,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitAssign(YAPLParser.AssignContext ctx) {
-        System.out.println("visitAssign: " + ctx.getText());
-
         String id = ctx.ID().getText();
         YAPLType exprType = visit(ctx.expr());
 
@@ -842,9 +769,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
 
             exprType = symbol.getType(); // ignore errors
         }
-
-//        symbol.setType(exprType); // set symbol type to exprType
-//        if (this.scopes.peek().get(id).getType())
 
         return exprType;
     }

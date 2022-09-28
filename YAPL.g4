@@ -10,11 +10,6 @@ classDef
     : CLASS classId=TYPE (INHERITS parentId=TYPE)? '{' ((funcDef | varDef) ';')* '}' ';'
     ;
 
-//feature
-//    : (ID '(' (formal (',' formal)*)? ')' ':' TYPE '{' (expr)* '}')                   # funcDef
-//    | (ID ':' TYPE (ASSIGN expr)?)                                                    # attrDef
-//    ;
-
 funcDef
     : (ID '(' (formal (',' formal)*)? ')' ':' (TYPE | VOID) '{' (expr)* '}')
     ;
@@ -34,7 +29,6 @@ expr
     | WHILE expr LOOP expr POOL                                                         # while
     | '{' (expr ';')+ '}'                                                               # brackets
     | LET  varDef (',' varDef)* IN expr                                                 # let
-//    | LET  ID ':' TYPE (ASSIGN expr)? (',' ID ':' TYPE (ASSIGN expr)? )* IN expr        # let
     | NEW TYPE                                                                          # new
     | op='~' expr                                                                          # intComplement
     | ISVOID expr                                                                       # isvoid
@@ -50,7 +44,6 @@ expr
     | TRUE                                                                              # true
     | FALSE                                                                             # false
     | SELF                                                                              # self
-//    | VOID                                                                              # void
     ;
 
 
