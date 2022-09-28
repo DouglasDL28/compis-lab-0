@@ -5,6 +5,7 @@ import java.util.HashMap;
 public class YAPLSymbolTable {
     private HashMap<String, YAPLSymbol> symbols;
     private String scope;
+    private int offset = 0;
 
     public YAPLSymbolTable(String scope) {
         this.symbols = new HashMap<String, YAPLSymbol>();
@@ -29,5 +30,13 @@ public class YAPLSymbolTable {
 
     public YAPLSymbol get(String id) {
         return symbols.get(id);
+    }
+
+    public int getOffset() {
+        return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
     }
 }

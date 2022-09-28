@@ -90,10 +90,9 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     }
 
     /**
-     * TODO: que valor tiene?
      * CLASS TYPE (INHERITS TYPE)? '{' ((funcDef | varDef) ';')* '}' ';'
      * @param ctx the parse tree
-     * @return TODO
+     * @return Object type
      */
     @Override
     public YAPLType visitClassDef(YAPLParser.ClassDefContext ctx) {
@@ -171,7 +170,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
 
         this.currentClass = null; // return class to null
 
-        return objectType;
+        return this.objectType;
     }
 
     /**
@@ -179,7 +178,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      * (ID '(' (formal (',' formal)*)? ')' ':' TYPE '{' (expr)* '}')
      *
      * @param ctx the parse tree
-     * @return TODO
+     * @return Object type
      */
     @Override
     public YAPLType visitFuncDef(YAPLParser.FuncDefContext ctx) {
@@ -204,7 +203,9 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
             }
 
             // add to symbol table
-            this.scopes.peek().add(new YAPLSymbol(id, this.types.getType(type), 0));
+            YAPLType varType = this.types.getType(type);
+            this.scopes.peek().add(new YAPLSymbol(id, varType, varType.getWidth(), this.scopes.peek().getOffset()));
+            this.scopes.peek().setOffset(this.scopes.peek().getOffset() + varType.getWidth());
         }
         signature = signature + ")";
 
@@ -229,9 +230,8 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     /**
      * Attribute definition
      * (ID ':' TYPE (ASSIGN expr)?)
-     * TODO: chequear polimorfismo
      * @param ctx the parse tree
-     * @return TODO
+     * @return exprType
      */
     @Override
     public YAPLType visitVarDef(YAPLParser.VarDefContext ctx) {
@@ -253,7 +253,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
 
         // Check expression
         if (ctx.expr() == null) {
-            scopes.peek().add(new YAPLSymbol(id, varType, 0));
+            scopes.peek().add(new YAPLSymbol(id, varType, varType.getWidth(), 0));
 
             return varType;
         } else {
@@ -271,7 +271,8 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
             }
 
             // add to symbol table
-            scopes.peek().add(new YAPLSymbol(id, exprType, 0));
+            scopes.peek().add(new YAPLSymbol(id, exprType, exprType.getWidth(), this.scopes.peek().getOffset()));
+            this.scopes.peek().setOffset(this.scopes.peek().getOffset() + exprType.getWidth());
 
             return exprType;
         }
@@ -432,7 +433,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     }
 
     /**
-     * TODO: No recuerdo cómo era esto
      * WHILE expr LOOP expr POOL
      * @param ctx the parse tree
      * @return Object type
@@ -508,7 +508,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     }
 
     /**
-     * TODO: validar qué tipos de pueden comparar.
      * expr op=('<'|'<='|'=') expr
      * @param ctx the parse tree
      * @return Bool if both expr can be compared.
@@ -523,7 +522,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
                 || (leftChild.getId().equals("Int") && rightChild.getId().equals("Bool"))
                 || (leftChild.getId().equals("Bool") && rightChild.getId().equals("Int"))
         )
-            return this.types.getType("Bool");
+            return this.boolType;
 
         this.createNewError(
                 ctx.start.getLine(),
@@ -537,9 +536,8 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     /**
      * '~' expr
      * ~ is complement of variables of type Int
-     * not is complement of variables of type Bool
      * @param ctx the parse tree
-     * @return TODO
+     * @return Int type
      */
     @Override
     public YAPLType visitIntComplement(YAPLParser.IntComplementContext ctx) {
@@ -554,16 +552,14 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
             );
         }
 
-
         return this.intType; // ignore error
     }
 
     /**
-     * '~' expr
-     * ~ is complement of variables of type Int
+     * 'not' expr
      * not is complement of variables of type Bool
      * @param ctx the parse tree
-     * @return TODO
+     * @return Boolean type
      */
     @Override
     public YAPLType visitBoolComplement(YAPLParser.BoolComplementContext ctx) {
@@ -582,7 +578,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     }
 
     /**
-     * TODO: validar con nueva gramática
      * LET  varDef (',' varDef)* IN expr
      * @param ctx the parse tree
      * @return last expr type
@@ -628,7 +623,10 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
 
             // add to symbol table
             if (!this.scopes.peek().contains(id)) {
-                this.scopes.peek().add(new YAPLSymbol(id, this.types.getType(typeId), 0));
+                YAPLType varType = this.types.getType(typeId);
+                this.scopes.peek().add(new YAPLSymbol(id, varType, varType.getWidth(), 0));
+                this.scopes.peek().setOffset(this.scopes.peek().getOffset() + varType.getWidth());
+
             } else {
                 this.createNewError(
                         varDef.ID().getSymbol().getLine(),
@@ -738,10 +736,9 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     }
 
     /**
-     * TODO: hay que validar en la tabla de símbolos
      * ID ASSIGN expr
      * @param ctx the parse tree
-     * @return TODO
+     * @return exprType
      */
     @Override
     public YAPLType visitAssign(YAPLParser.AssignContext ctx) {
@@ -757,7 +754,8 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
                     "Id not defined."
             );
 
-            symbol = new YAPLSymbol(id, exprType, 0);
+            symbol = new YAPLSymbol(id, exprType, exprType.getWidth(), this.scopes.peek().getOffset());
+
         }
 
         if (!isValidAssignment(exprType, symbol.getType())) {
