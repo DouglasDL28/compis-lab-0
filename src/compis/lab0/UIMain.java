@@ -209,6 +209,7 @@ public class UIMain extends Application {
 
                 YAPLTypesTable types = new YAPLTypesTable();
                 List<YAPLSemError> errors = new ArrayList<>();
+                List<Quad> intermediateCode = new ArrayList<>();
 
                 YAPLTypesVisitor typesVisitor = new YAPLTypesVisitor(types, errors);
                 typesVisitor.visit(tree);
@@ -218,7 +219,7 @@ public class UIMain extends Application {
                 methodsVisitor.visit(tree);
                 System.out.println("\n");
 
-                YAPLSemanticVisitor semVisitor = new YAPLSemanticVisitor(types, errors);
+                YAPLSemanticVisitor semVisitor = new YAPLSemanticVisitor(types, errors, intermediateCode);
                 semVisitor.visit(tree);
 
                 if (errors.size() > 0) {

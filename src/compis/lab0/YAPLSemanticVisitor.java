@@ -1,14 +1,22 @@
 package compis.lab0;
 
-import java.util.List;
-import java.util.Stack;
+import org.antlr.v4.runtime.tree.ParseTreeProperty;
+
+import java.util.*;
 
 public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
 
-    private YAPLTypesTable types;
-    private List<YAPLSemError> errors;
+    private final YAPLTypesTable types;
+    private final List<YAPLSemError> errors;
 
+    private final List<Quad> intermediateCode;
+
+    private final Stack<Integer> offsets = new Stack<>();
     private final Stack<YAPLSymbolTable> scopes = new Stack<>();
+    private final Stack<YAPLSymbolTable> temps = new Stack<>();
+
+    private final ParseTreeProperty<String> addresses = new ParseTreeProperty<>();
+    private final ParseTreeProperty<String> labels = new ParseTreeProperty<>();
 
     private YAPLType currentClass = null;
 
@@ -18,9 +26,10 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     private final YAPLType boolType;
 
 
-    public YAPLSemanticVisitor(YAPLTypesTable types, List<YAPLSemError> errors) {
+    public YAPLSemanticVisitor(YAPLTypesTable types, List<YAPLSemError> errors, List<Quad> interCode) {
         this.types = types;
         this.errors = errors;
+        this.intermediateCode = interCode;
 
         // Predefined types
         this.objectType = this.types.getType("Object");
@@ -35,6 +44,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
             default -> false;
         };
     }
+
 
     public YAPLSymbol getSymbol(String id) {
 
@@ -72,6 +82,10 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     @Override
     public YAPLType visitProgram(YAPLParser.ProgramContext ctx) {
         this.scopes.push(new YAPLSymbolTable("global"));
+        this.offsets.push(0);
+
+        // create symbol table for temps
+        this.temps.push(new YAPLSymbolTable("global_temps"));
 
         YAPLType semAnalysis = null;
         for (int i=0; i<ctx.classDef().size(); i++) {
@@ -96,6 +110,9 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitClassDef(YAPLParser.ClassDefContext ctx) {
+
+        // symbol table for temps in class definition
+        this.temps.push(new YAPLSymbolTable(ctx.classId.getText()));
 
         YAPLType parent = this.objectType;
 
@@ -143,6 +160,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
 
         // Create class scope
         this.scopes.push(new YAPLSymbolTable(ctx.classId.getText()));
+        this.offsets.push(0);
 
         // class attributes
         for (YAPLParser.VarDefContext varDef : ctx.varDef()) {
@@ -186,10 +204,11 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
         String funcId = ctx.ID().getText();
         String returnTypeId = ctx.TYPE().getText();
 
+        this.scopes.push(new YAPLSymbolTable(funcId));
+        this.offsets.push(0);
 
         // Create params list with formals
-
-        String signature = funcId + "(";
+        StringBuilder signature = new StringBuilder(funcId + "(");
         for (int i=0; i<ctx.formal().size(); i++) {
             YAPLParser.FormalContext formal = ctx.formal(i);
 
@@ -197,19 +216,20 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
             String type = formal.TYPE().getText();
 
             if (i == ctx.formal().size()-1) {
-                signature = signature + type;
+                signature.append(type);
             } else {
-                signature = signature + type + ", ";
+                signature.append(type).append(", ");
             }
 
             // add to symbol table
             YAPLType varType = this.types.getType(type);
-            this.scopes.peek().add(new YAPLSymbol(id, varType, varType.getWidth(), this.scopes.peek().getOffset()));
-            this.scopes.peek().setOffset(this.scopes.peek().getOffset() + varType.getWidth());
+            this.scopes.peek().add(new YAPLSymbol(id, varType, varType.getWidth(), this.offsets.peek()));
+            this.offsets.push(this.offsets.pop() + varType.getWidth()); // update offset
         }
-        signature = signature + ")";
 
-        YAPLMethod method = this.currentClass.getMethods().get(signature);
+        signature.append(")");
+
+        YAPLMethod method = this.currentClass.getMethods().get(signature.toString());
 
         for (int i=0; i < ctx.expr().size(); i ++) {
             YAPLType exprType = visit(ctx.expr(i));
@@ -271,8 +291,19 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
             }
 
             // add to symbol table
-            scopes.peek().add(new YAPLSymbol(id, exprType, exprType.getWidth(), this.scopes.peek().getOffset()));
-            this.scopes.peek().setOffset(this.scopes.peek().getOffset() + exprType.getWidth());
+            YAPLSymbol newSymbol = new YAPLSymbol(id, exprType, exprType.getWidth(), this.offsets.peek());
+            scopes.peek().add(newSymbol);
+            this.offsets.push(this.offsets.pop() + exprType.getWidth());
+
+            Quad quad = new Quad(
+                    "=",
+                    this.addresses.get(ctx.expr().getRuleContext()),
+                    null,
+                    newSymbol.getOffset().toString()
+            );
+
+            System.out.println(quad);
+            this.intermediateCode.add(quad);
 
             return exprType;
         }
@@ -301,6 +332,24 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
         YAPLType left = visit(ctx.expr1); // left expr
         YAPLType right = visit(ctx.expr2); // right expr
 
+        this.temps.push(new YAPLSymbolTable("MulDiv"));
+
+        YAPLSymbol temp = new YAPLSymbol("temp", this.intType, this.intType.getWidth(), this.offsets.peek());
+        this.offsets.push(this.offsets.pop() + this.intType.getWidth());
+        this.temps.peek().add(temp);
+
+        String op = ctx.op.getText().equals("*") ? "MUL" : "DIV";
+        Quad quad = new Quad(
+                op,
+                this.addresses.get(ctx.expr1.getRuleContext()),
+                this.addresses.get(ctx.expr2.getRuleContext()),
+                temp.getOffset().toString()
+        );
+        System.out.println(quad);
+        this.intermediateCode.add(quad);
+
+        this.addresses.put(ctx, temp.getOffset().toString());
+
         if (left.equals(right)) {
             return this.intType;
         }
@@ -326,6 +375,24 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     public YAPLType visitAddSub(YAPLParser.AddSubContext ctx) {
         YAPLType left = visit(ctx.expr1); // left expr
         YAPLType right = visit(ctx.expr2); // right expr
+
+        this.temps.push(new YAPLSymbolTable("AddSub"));
+
+        YAPLSymbol temp = new YAPLSymbol("temp", this.intType, this.intType.getWidth(), this.offsets.peek());
+        this.offsets.push(this.offsets.pop() + this.intType.getWidth());
+        this.temps.peek().add(temp);
+
+        String op = ctx.op.getText().equals("+") ? "ADD" : "SUB";
+        Quad quad = new Quad(
+                op,
+                this.addresses.get(ctx.expr1.getRuleContext()),
+                this.addresses.get(ctx.expr2.getRuleContext()),
+                temp.getOffset().toString()
+        );
+        System.out.println(quad);
+        this.intermediateCode.add(quad);
+
+        this.addresses.put(ctx, temp.getOffset().toString());
 
         if (left.equals(right)) {
             return this.intType;
@@ -358,6 +425,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitFalse(YAPLParser.FalseContext ctx) {
+        this.addresses.put(ctx, "FALSE");
         return this.boolType;
     }
 
@@ -368,6 +436,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitTrue(YAPLParser.TrueContext ctx) {
+        this.addresses.put(ctx, "TRUE");
         return this.boolType;
     }
 
@@ -378,6 +447,8 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitString(YAPLParser.StringContext ctx) {
+        // TODO: revisar si debe ser puntero
+        this.addresses.put(ctx, ctx.getText());
         return this.stringType;
     }
 
@@ -429,6 +500,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitInteger(YAPLParser.IntegerContext ctx) {
+        this.addresses.put(ctx, ctx.getText());
         return this.intType;
     }
 
@@ -624,8 +696,8 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
             // add to symbol table
             if (!this.scopes.peek().contains(id)) {
                 YAPLType varType = this.types.getType(typeId);
-                this.scopes.peek().add(new YAPLSymbol(id, varType, varType.getWidth(), 0));
-                this.scopes.peek().setOffset(this.scopes.peek().getOffset() + varType.getWidth());
+                this.scopes.peek().add(new YAPLSymbol(id, varType, varType.getWidth(), this.offsets.peek()));
+                this.offsets.push(this.offsets.pop() + varType.getWidth());
 
             } else {
                 this.createNewError(
@@ -754,8 +826,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
                     "Id not defined."
             );
 
-            symbol = new YAPLSymbol(id, exprType, exprType.getWidth(), this.scopes.peek().getOffset());
-
+            symbol = new YAPLSymbol(id, exprType, exprType.getWidth(), this.offsets.peek());
         }
 
         if (!isValidAssignment(exprType, symbol.getType())) {

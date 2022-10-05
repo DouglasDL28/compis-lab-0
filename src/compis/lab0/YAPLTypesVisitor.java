@@ -42,7 +42,6 @@ public class YAPLTypesVisitor extends YAPLBaseVisitor<YAPLType> {
 
         // validate new type's existence
         if (this.types.containsType(ctx.classId.getText())) {
-            System.out.println("Error! Class is already defined.");
             YAPLSemError error = new YAPLSemError(
                     ctx.classId.getLine(),
                     ctx.classId.getCharPositionInLine(),
@@ -89,9 +88,6 @@ public class YAPLTypesVisitor extends YAPLBaseVisitor<YAPLType> {
 
             YAPLType newClass = new YAPLType(ctx.classId.getText(), parent, parent.getDepth()+1);
             this.types.addType(newClass); // add class
-
-            System.out.println("New class: " + ctx.classId.getText());
-
 
             this.types.addType(newClass);
             this.currentClass = newClass;

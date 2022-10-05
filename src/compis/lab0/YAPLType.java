@@ -89,10 +89,8 @@ public class YAPLType {
      * @return common ancestor
      */
     public YAPLType commonAncestorWith(YAPLType type) {
-        System.out.println("Finding common ancestor of " + this.id + " and " + type.getId());
 
         if (this.equals(type)) {
-            System.out.println("Common ancestor: " + this.getId());
             return this;
         }
 

@@ -4,7 +4,7 @@ public class YAPLSymbol {
     private String id;
     private YAPLType type;
     private final int width;
-    private int offset;
+    private Integer offset;
 
     public YAPLSymbol(String id, YAPLType type, int width, int offset) {
         this.id = id;
@@ -29,9 +29,9 @@ public class YAPLSymbol {
         this.type = type;
     }
 
-    public int getOffset() {
+    public Integer getOffset() {
         return offset;
     }
 
-    public int getWidth() { return this.width; }
+    public Integer getWidth() { return this.width; }
 }

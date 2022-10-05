@@ -37,12 +37,10 @@ public class YAPLMethodsVisitor extends YAPLBaseVisitor<YAPLType> {
 
     @Override
     public YAPLType visitClassDef(YAPLParser.ClassDefContext ctx) {
-        System.out.println("visitClassDef: " + ctx.classId.getText());
         this.currentClass = this.types.getType(ctx.classId.getText());
 
         for (Map.Entry<String, YAPLMethod> method : this.currentClass.getParent().getMethods().entrySet()) {
             YAPLMethod newMethod = new YAPLMethod(method.getValue().getId(), method.getValue().getReturnType(), method.getValue().getParams(), false);
-            System.out.println("Adding inherited method: " + method.getKey());
             // validate self_type
             if (method.getValue().returnsSelfType()) {
                 newMethod.setReturnType(this.currentClass);
@@ -62,8 +60,6 @@ public class YAPLMethodsVisitor extends YAPLBaseVisitor<YAPLType> {
 
     @Override
     public YAPLType visitFuncDef(YAPLParser.FuncDefContext ctx) {
-        System.out.println("visitFuncDef: " + ctx.ID().getText());
-
         YAPLType returnType = this.types.getType(ctx.TYPE().getText());
         boolean returnsSelfType = false;
 
@@ -119,11 +115,9 @@ public class YAPLMethodsVisitor extends YAPLBaseVisitor<YAPLType> {
             params.add(paramReturnType);
         }
         methodSignature = methodSignature + ")";
-        System.out.printf("\t" + methodSignature);
 
         YAPLMethod newMethod = new YAPLMethod(ctx.ID().getText(), returnType, params, returnsSelfType);
 
-        System.out.println("\t" + methodSignature);
         this.currentClass.getMethods().put(methodSignature, newMethod);
 
         return this.objectType;

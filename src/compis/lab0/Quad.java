@@ -31,6 +31,9 @@ public class Quad {
 
     @Override
     public String toString() {
+        if (this.arg2 == null) {
+            return this.op + " " + this.arg1 + " " + this.result;
+        }
         return this.result + " = " + this.arg1 + " " + this.op + " " + this.arg2;
     }
 }
