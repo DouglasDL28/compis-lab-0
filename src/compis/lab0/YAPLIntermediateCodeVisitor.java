@@ -4,16 +4,21 @@ import org.antlr.v4.runtime.tree.ParseTreeProperty;
 
 import java.util.*;
 
-public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
+public class YAPLIntermediateCodeVisitor extends YAPLBaseVisitor<YAPLType> {
 
     private final YAPLTypesTable types;
-    private final List<YAPLSemError> errors;
+
+    private final List<Quad> intermediateCode;
 
     private final Stack<Integer> offsets = new Stack<>();
     private final Stack<YAPLSymbolTable> scopes = new Stack<>();
+    private final Stack<YAPLSymbolTable> temps = new Stack<>();
     private int labelCount = 0;
 
+    private final ParseTreeProperty<String> addresses = new ParseTreeProperty<>();
+
     private YAPLType currentClass = null;
+    private Stack<String> interCodeScope = new Stack<>();
 
     private final YAPLType objectType;
     private final YAPLType stringType;
@@ -21,9 +26,9 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     private final YAPLType boolType;
 
 
-    public YAPLSemanticVisitor(YAPLTypesTable types, List<YAPLSemError> errors) {
+    public YAPLIntermediateCodeVisitor(YAPLTypesTable types, List<Quad> interCode) {
         this.types = types;
-        this.errors = errors;
+        this.intermediateCode = interCode;
 
         // Predefined types
         this.objectType = this.types.getType("Object");
@@ -32,13 +37,37 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
         this.boolType = this.types.getType("Bool");
     }
 
-    public boolean isPrimitive(String id) {
-        return switch (id) {
-            case "Bool", "Int", "String" -> true;
-            default -> false;
-        };
+    public void generateQuad(String op, String arg1, String arg2, String result) {
+        Quad quad = new Quad(op, arg1, arg2, result);
+        System.out.println(quad);
+
+        this.intermediateCode.add(quad);
     }
 
+    public YAPLSymbol generateTemp(YAPLType type) {
+        YAPLSymbolTable top = this.temps.peek();
+
+        YAPLSymbol temp = new YAPLSymbol("temp", type, type.getWidth(), this.offsets.peek(), this.interCodeScope.peek());
+        this.offsets.push(this.offsets.pop() + type.getWidth());
+        top.add(temp);
+
+        return temp;
+    }
+
+    public String getCodeFromSymbol(YAPLSymbol symbol) {
+        return symbol.getScope() + "[" + symbol.getOffset().toString() + "]";
+    }
+
+    /**
+     * Generate new Label.
+     * @return new unique label
+     */
+    public String genLabel() {
+        String newLabel = "L" + this.labelCount;
+        this.labelCount++;
+
+        return newLabel;
+    }
 
     public YAPLSymbol getSymbol(String id) {
 
@@ -53,22 +82,6 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
         return null;
     }
 
-    public boolean isValidAssignment(YAPLType expr, YAPLType expectedType) {
-        if (expr.equals(this.boolType) && expectedType.equals(this.intType))
-            return true;
-
-        if (expr.equals(this.intType) && expectedType.equals(this.boolType))
-            return true;
-
-        return expr.equals(expectedType) || expr.isDescendantOf(expectedType);
-    }
-
-    public void createNewError(int line, int pos, String description) {
-        YAPLSemError error = new YAPLSemError(line, pos, description);
-        System.out.println(error);
-        this.errors.add(error);
-    }
-
     /**
      * Tree root.
      * @param ctx the parse tree
@@ -76,19 +89,19 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitProgram(YAPLParser.ProgramContext ctx) {
-        this.scopes.push(new YAPLSymbolTable("global"));
-        this.offsets.push(0);
+        this.scopes.push(new YAPLSymbolTable("global")); // symbol table
+        this.temps.push(new YAPLSymbolTable("global"));  // temps
+        this.interCodeScope.push("global");
+        this.offsets.push(0); // add new offset
 
         YAPLType semAnalysis = null;
         for (int i=0; i<ctx.classDef().size(); i++) {
             semAnalysis = visit(ctx.classDef(i));
         }
 
-        if (!this.types.containsType("Main")) {
-            this.createNewError(0, 0, "Program must have a class Main.");
-        }
-
+        // pop everything from stacks
         this.scopes.pop();
+        this.temps.pop();
         this.offsets.pop();
 
 //        YAPLType semAnalysis = visitChildren(ctx);
@@ -104,53 +117,25 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     @Override
     public YAPLType visitClassDef(YAPLParser.ClassDefContext ctx) {
 
+        this.temps.push(new YAPLSymbolTable(ctx.classId.getText())); // Create temps scope
+        this.scopes.push(new YAPLSymbolTable(ctx.classId.getText())); // Create class scope
+        this.interCodeScope.push(ctx.classId.getText());
+        this.offsets.push(0); // new offset
+
         YAPLType parent = this.objectType;
 
         // inheritance defined
         if (ctx.parentId != null) {
             parent = this.types.getType(ctx.parentId.getText());
-
-            // validate parent type
-            if (!this.types.containsType(ctx.parentId.getText())) {
-                this.createNewError(
-                    ctx.parentId.getLine(),
-                    ctx.parentId.getCharPositionInLine(),
-                    "Inheritance type " + ctx.parentId.getText() + " not defined."
-                );
-
-                parent = this.objectType;
-            }
-
-            // validate inheritance from primitives
-            if (isPrimitive(ctx.parentId.getText())) {
-                this.createNewError(
-                    ctx.parentId.getLine(),
-                    ctx.parentId.getCharPositionInLine(),
-                    "Can't inherit from primitive type."
-                );
-                parent = this.objectType;
-            }
-
         }
 
         YAPLType newClass = this.types.getType(ctx.classId.getText());
         newClass.setParent(parent);
         newClass.setDepth(parent.getDepth()+1);
 
-        // validate cyclic inheritance
-        if (!parent.equals(this.objectType) && parent.isDescendantOf(newClass)) {
-            this.createNewError(
-                ctx.parentId.getLine(),
-                ctx.parentId.getCharPositionInLine(),
-                "Recursive inheritance detected in " + ctx.parentId + "."
-            );
-        }
-
         this.currentClass = newClass;
 
-        // Create class scope
-        this.scopes.push(new YAPLSymbolTable(ctx.classId.getText()));
-        this.offsets.push(0);
+        this.generateQuad(this.currentClass.getId() + ":", null, null, null);
 
         // class attributes
         for (YAPLParser.VarDefContext varDef : ctx.varDef()) {
@@ -162,20 +147,11 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
             visit(funcDef);
         }
 
-        // validate main method's existence in Main class
-        if (ctx.classId.getText().equals("Main")) {
-            if (!newClass.getMethods().containsKey("main()")) {
-                this.createNewError(
-                        ctx.classId.getLine(),
-                        ctx.classId.getCharPositionInLine(),
-                        "Main class must have a main method."
-                );
-            }
-        }
-
-        // pop class and temp scope
+        // pop from all stacks
         this.scopes.pop();
         this.offsets.pop();
+        this.temps.pop();
+        this.interCodeScope.pop();
 
         this.currentClass = null; // return class to null
 
@@ -193,9 +169,14 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     public YAPLType visitFuncDef(YAPLParser.FuncDefContext ctx) {
 
         String funcId = ctx.ID().getText();
+        String returnTypeId = ctx.TYPE().getText();
 
         this.scopes.push(new YAPLSymbolTable(funcId));
+        this.temps.push(new YAPLSymbolTable(funcId));
+        this.interCodeScope.push(funcId);
         this.offsets.push(0);
+
+        this.generateQuad(this.currentClass.getId() + "." + funcId + ":", null, null, null);
 
         // Create params list with formals
         StringBuilder signature = new StringBuilder(funcId + "(");
@@ -213,8 +194,20 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
 
             // add to symbol table
             YAPLType varType = this.types.getType(type);
-            this.scopes.peek().add(new YAPLSymbol(id, varType, varType.getWidth(), this.offsets.peek(), this.scopes.peek().getScope()));
+            YAPLSymbolTable symTableTop = this.scopes.peek();
+
+            YAPLSymbol symbol = new YAPLSymbol(id, varType, varType.getWidth(), this.offsets.peek(), this.interCodeScope.peek());
+            symTableTop.add(symbol);
             this.offsets.push(this.offsets.pop() + varType.getWidth()); // update offset
+
+            this.generateQuad(
+                    "=",
+                    varType.getDefaultVal(),
+                    this.getCodeFromSymbol(symbol),
+                    null
+            );
+
+
         }
 
         signature.append(")");
@@ -223,19 +216,12 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
 
         for (int i=0; i < ctx.expr().size(); i ++) {
             YAPLType exprType = visit(ctx.expr(i));
-            // validate return type
-            // TODO: validate if polymorphism applies
-            if (i == ctx.expr().size()-1 && !isValidAssignment(exprType, method.getReturnType())) {
-                this.createNewError(
-                        ctx.expr(i).getStart().getLine(),
-                        ctx.expr(i).getStart().getCharPositionInLine(),
-                        "Expression doesn't match with return type doesn't match in " + ctx.ID().getText() + " method."
-                );
-            }
         }
 
         // pop top in scopes and temps stacks
         this.scopes.pop();
+        this.temps.pop();
+        this.interCodeScope.pop();
         this.offsets.pop();
 
         return this.objectType;
@@ -254,40 +240,34 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
 
         YAPLType varType = this.types.getType(typeId);
 
-        // evaluate type's existence
-        if (varType == null) {
-            this.createNewError(
-                    ctx.TYPE().getSymbol().getLine(),
-                    ctx.TYPE().getSymbol().getCharPositionInLine(),
-                    "Type " + typeId + "doesn't exist."
-            );
-
-            varType = this.objectType;
-        }
-
         // Check expression
         if (ctx.expr() == null) {
-            scopes.peek().add(new YAPLSymbol(id, varType, varType.getWidth(), 0, this.scopes.peek().getScope()));
+            YAPLSymbol symbol = new YAPLSymbol(id, varType, varType.getWidth(), 0, this.interCodeScope.peek());
+            scopes.peek().add(symbol);
+
+            this.generateQuad(
+                    "=",
+                    varType.getDefaultVal(),
+                    this.getCodeFromSymbol(symbol),
+                    null
+            );
 
             return varType;
         } else {
             // evaluate assignment
             YAPLType exprType = visit(ctx.expr());
 
-            if (!isValidAssignment(exprType, varType)) {
-                this.createNewError(
-                        ctx.TYPE().getSymbol().getLine(),
-                        ctx.TYPE().getSymbol().getCharPositionInLine(),
-                        "Expression doesn't match with type " + typeId + "."
-                );
-
-                exprType = varType; // ignore error
-            }
-
             // add to symbol table
-            YAPLSymbol newSymbol = new YAPLSymbol(id, exprType, exprType.getWidth(), this.offsets.peek(), this.scopes.peek().getScope());
+            YAPLSymbol newSymbol = new YAPLSymbol(id, exprType, exprType.getWidth(), this.offsets.peek(), this.interCodeScope.peek());
             scopes.peek().add(newSymbol);
             this.offsets.push(this.offsets.pop() + exprType.getWidth());
+
+            this.generateQuad(
+                    "=",
+                    this.addresses.get(ctx.expr().getRuleContext()),
+                    this.getCodeFromSymbol(newSymbol),
+                    null
+            );
 
             return exprType;
         }
@@ -316,15 +296,19 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
         YAPLType left = visit(ctx.expr1); // left expr
         YAPLType right = visit(ctx.expr2); // right expr
 
-        if (left.equals(right)) {
-            return this.intType;
-        }
+        this.temps.push(new YAPLSymbolTable("MulDiv"));
 
-        this.createNewError(
-                ctx.expr1.getStart().getLine(),
-                ctx.expr1.getStart().getCharPositionInLine(),
-                "Can't do operation with " + left.getId() + " and " + right.getId() + "."
+        YAPLSymbol temp = generateTemp(this.intType);
+
+        String op = ctx.op.getText().equals("*") ? "MUL" : "DIV";
+        this.generateQuad(
+                op,
+                this.addresses.get(ctx.expr1.getRuleContext()),
+                this.addresses.get(ctx.expr2.getRuleContext()),
+                this.getCodeFromSymbol(temp)
         );
+
+        this.addresses.put(ctx, this.getCodeFromSymbol(temp));
 
         return this.intType; // default value
     }
@@ -342,15 +326,23 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
         YAPLType left = visit(ctx.expr1); // left expr
         YAPLType right = visit(ctx.expr2); // right expr
 
+        this.temps.push(new YAPLSymbolTable("AddSub"));
+
+        YAPLSymbol temp = this.generateTemp(this.intType);
+
+        String op = ctx.op.getText().equals("+") ? "ADD" : "SUB";
+        this.generateQuad(
+                op,
+                this.addresses.get(ctx.expr1.getRuleContext()),
+                this.addresses.get(ctx.expr2.getRuleContext()),
+                this.getCodeFromSymbol(temp)
+        );
+
+        this.addresses.put(ctx, this.getCodeFromSymbol(temp));
+
         if (left.equals(right)) {
             return this.intType;
         }
-
-        this.createNewError(
-                ctx.expr1.getStart().getLine(),
-                ctx.expr1.getStart().getCharPositionInLine(),
-                "Can't do operation with " + left.getId() + " and " + right.getId() + "."
-        );
 
         return this.intType;
     }
@@ -363,6 +355,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitSelf(YAPLParser.SelfContext ctx) {
+        this.addresses.put(ctx, this.currentClass.getId() + "[0]");
         return this.currentClass;
     }
 
@@ -373,6 +366,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitFalse(YAPLParser.FalseContext ctx) {
+        this.addresses.put(ctx, "FALSE");
         return this.boolType;
     }
 
@@ -383,6 +377,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitTrue(YAPLParser.TrueContext ctx) {
+        this.addresses.put(ctx, "TRUE");
         return this.boolType;
     }
 
@@ -393,6 +388,8 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitString(YAPLParser.StringContext ctx) {
+        // TODO: revisar si debe ser puntero
+        this.addresses.put(ctx, ctx.getText());
         return this.stringType;
     }
 
@@ -403,16 +400,21 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitNew(YAPLParser.NewContext ctx) {
-        if (!this.types.containsType(ctx.TYPE().getText())) {
-            this.createNewError(
-                    ctx.TYPE().getSymbol().getLine(),
-                    ctx.TYPE().getSymbol().getCharPositionInLine(),
-                    "Type " + ctx.TYPE().getText() + " is not defined."
-            );
+        // create return val temp
+        this.generateQuad("param", ctx.TYPE().getText(), null, null);
+        YAPLSymbol returnValTemp = this.generateTemp(this.objectType);
 
-            return this.objectType; // default return type
-        }
+        // set ctx address to return temp value
+        this.addresses.put(ctx, this.getCodeFromSymbol(returnValTemp));
 
+        // call intermediate code
+        // returnTempVal = call funcID, param.length
+        this.generateQuad(
+                ",",
+                "call new",
+                String.valueOf(1),
+                this.getCodeFromSymbol(returnValTemp)
+        );
         return this.types.getType(ctx.TYPE().getText());
     }
 
@@ -424,7 +426,9 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitParens(YAPLParser.ParensContext ctx) {
-        return visit(ctx.expr());
+        YAPLType exprType = visit(ctx.expr());
+        this.addresses.put(ctx, this.addresses.get(ctx.expr().getRuleContext()));
+        return exprType;
     }
 
     /**
@@ -434,6 +438,16 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitIsvoid(YAPLParser.IsvoidContext ctx) {
+        YAPLSymbol temp = this.generateTemp(this.boolType);
+        visit(ctx.expr());
+
+        this.generateQuad(
+                "=",
+                "VOID",
+                this.addresses.get(ctx.expr().getRuleContext()),
+                this.getCodeFromSymbol(temp)
+        );
+
         return this.boolType;
     }
 
@@ -444,6 +458,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
      */
     @Override
     public YAPLType visitInteger(YAPLParser.IntegerContext ctx) {
+        this.addresses.put(ctx, ctx.getText());
         return this.intType;
     }
 
@@ -457,13 +472,30 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
        // expr1 is not bool
         YAPLType whileExprType = visit(ctx.expr(0));
 
-        if (!whileExprType.equals(this.boolType)) {
-            this.createNewError(
-                    ctx.expr(0).getStart().getLine(),
-                    ctx.expr(0).getStart().getCharPositionInLine(),
-                    "While expression must be of type Bool."
-            );
-        }
+        String begin = genLabel();
+        String BTrue = genLabel();
+        String next = genLabel();
+        String BFalse = next;
+
+        this.generateQuad(
+                "if",
+                this.addresses.get(ctx.expr(0).getRuleContext()),
+                "goto " + BTrue,
+                null
+        );
+        // B false code
+        this.generateQuad(
+                "ifFalse",
+                this.addresses.get(ctx.expr(0).getRuleContext()),
+                "goto " + BFalse,
+                null
+        );
+        this.generateQuad(begin + ":", null, null, null);
+        this.generateQuad(BTrue + ":", null, null, null);
+        visit(ctx.expr(1));
+        this.generateQuad("goto " + begin, null, null, null);
+
+        this.generateQuad(next + ":", null, null, null);
 
         return this.objectType;
     }
@@ -481,6 +513,18 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
         for (int i=0; i < ctx.expr().size(); i++) {
             YAPLType paramType = visit(ctx.expr(i));
 
+            //intermediate code
+            // create temp
+            YAPLSymbol temp = generateTemp(paramType);
+            this.generateQuad(
+                    "=",
+                    this.addresses.get(ctx.expr(i).getRuleContext()),
+                    this.getCodeFromSymbol(temp),
+                    null
+            );
+            // param temp
+            this.generateQuad("param", this.getCodeFromSymbol(temp), null, null);
+
             // asignar address a contexto
             if (i < ctx.expr().size()-1) {
                 signature.append(paramType.getId()).append(", ");
@@ -490,18 +534,23 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
         }
         signature.append(")");
 
-        if (!this.currentClass.getMethods().containsKey(signature.toString())) {
-            this.createNewError(
-                    ctx.ID().getSymbol().getLine(),
-                    ctx.ID().getSymbol().getCharPositionInLine(),
-                    "No method " + signature + " in " + this.currentClass.getId() + "."
-            );
-
-            return this.objectType;
-        }
-
         // get return type with signature
         YAPLType returnType = this.currentClass.getMethods().get(signature.toString()).getReturnType();
+
+        // create return val temp
+        YAPLSymbol returnValTemp = this.generateTemp(returnType);
+
+        // set ctx address to return temp value
+        this.addresses.put(ctx, this.getCodeFromSymbol(returnValTemp));
+
+        // call intermediate code
+        // returnTempVal = call funcID, param.length
+        this.generateQuad(
+                ",",
+                "call " + this.currentClass.getId() + "." + ctx.ID().getText(),
+                String.valueOf(ctx.expr().size()),
+                this.getCodeFromSymbol(returnValTemp)
+        );
 
         return returnType;
     }
@@ -519,6 +568,7 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
                 visit(ctx.expr(i));
             } else {
                 returnType = visit(ctx.expr(i));
+                this.addresses.put(ctx, this.addresses.get(ctx.expr(i).getRuleContext()));
             }
         }
 
@@ -535,18 +585,17 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
         YAPLType leftChild = visit(ctx.expr(0)); // left expr
         YAPLType rightChild = visit(ctx.expr(1)); // right expr
 
-        if (
-                leftChild.equals(rightChild)
-                || (leftChild.getId().equals("Int") && rightChild.getId().equals("Bool"))
-                || (leftChild.getId().equals("Bool") && rightChild.getId().equals("Int"))
-        )
-            return this.boolType;
+        // create temp
+        YAPLSymbol temp = this.generateTemp(this.intType);
 
-        this.createNewError(
-                ctx.start.getLine(),
-                ctx.start.getCharPositionInLine(),
-                "Can't compare type " + leftChild + " and " + rightChild + "."
+        this.generateQuad(
+                ctx.op.getText(),
+                this.addresses.get(ctx.expr1.getRuleContext()),
+                this.addresses.get(ctx.expr2.getRuleContext()),
+                this.getCodeFromSymbol(temp)
         );
+
+        this.addresses.put(ctx, this.getCodeFromSymbol(temp));
 
         return this.boolType;
     }
@@ -562,13 +611,18 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
         // bool
         YAPLType exprType = visit(ctx.expr());
 
-        if (!exprType.equals(this.intType)) {
-            this.createNewError(
-                    ctx.expr().start.getLine(),
-                    ctx.expr().start.getCharPositionInLine(),
-                    "Expression type must be of type Int."
-            );
-        }
+        // intermediate code
+        // create temp
+        YAPLSymbol temp = generateTemp(exprType);
+
+        this.generateQuad(
+                "~",
+                this.addresses.get(ctx.expr().getRuleContext()),
+                null,
+                this.getCodeFromSymbol(temp)
+        );
+
+        this.addresses.put(ctx, this.getCodeFromSymbol(temp));
 
         return this.intType; // ignore error
     }
@@ -584,13 +638,18 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
         // bool
         YAPLType exprType = visit(ctx.expr());
 
-        if (!exprType.equals(this.boolType)) {
-            this.createNewError(
-                    ctx.expr().start.getLine(),
-                    ctx.expr().start.getCharPositionInLine(),
-                    "Expression type must be of type Bool."
-            );
-        }
+        // intermediate code
+        // create temp
+        YAPLSymbol temp = this.generateTemp(exprType);
+
+        this.generateQuad(
+                "NOT",
+                this.addresses.get(ctx.expr().getRuleContext()),
+                null,
+                this.getCodeFromSymbol(temp)
+        );
+
+        this.addresses.put(ctx, this.getCodeFromSymbol(temp));
 
         return this.boolType; // ignore error
     }
@@ -612,50 +671,40 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
 
             YAPLType type = this.types.getType(typeId);
 
-            if (type == null) {
-                this.createNewError(
-                        varDef.TYPE().getSymbol().getLine(),
-                        varDef.TYPE().getSymbol().getCharPositionInLine(),
-                        "Type " + typeId + "doesn't exist."
-                );
-
-                type = this.objectType; // ignore error
-            }
-
             YAPLType assignmentType = type;
 
             // validate that expression type match
             if (varDef.expr() != null) {
                 assignmentType = visit(varDef.expr());
-
-                // validate expression type
-                if (!isValidAssignment(assignmentType, type)) {
-                    this.createNewError(
-                            varDef.expr().start.getLine(),
-                            varDef.expr().start.getCharPositionInLine(),
-                            "Expression doesn't match type " + typeId + "."
-                    );
-                    assignmentType = type;
-                }
             }
 
             // add to symbol table
-            if (!this.scopes.peek().contains(id)) {
-                YAPLType varType = this.types.getType(typeId);
-                YAPLSymbol symbol = new YAPLSymbol(id, varType, varType.getWidth(), this.offsets.peek(), this.scopes.peek().getScope());
-                this.scopes.peek().add(symbol);
-                this.offsets.push(this.offsets.pop() + varType.getWidth());
+            YAPLType varType = this.types.getType(typeId);
 
-            } else {
-                this.createNewError(
-                        varDef.ID().getSymbol().getLine(),
-                        varDef.ID().getSymbol().getCharPositionInLine(),
-                        "Variable " + id + " already defined in scope."
+            YAPLSymbol symbol = new YAPLSymbol(id, varType, varType.getWidth(), this.offsets.peek(), this.interCodeScope.peek());
+            this.scopes.peek().add(symbol);
+            this.offsets.push(this.offsets.pop() + varType.getWidth());
+
+            this.generateQuad(
+                    "=",
+                    varType.getDefaultVal(),
+                    this.getCodeFromSymbol(symbol),
+                    null
+            );
+
+            // intermediate code
+            if (varDef.expr() != null) {
+                this.generateQuad(
+                        "=",
+                        this.addresses.get(varDef.expr().getRuleContext()),
+                        this.getCodeFromSymbol(symbol),
+                        null
                 );
             }
         }
 
         YAPLType exprType = visit(ctx.expr());
+        this.addresses.put(ctx, ctx.expr().getRuleContext().toString());
 
         this.scopes.pop(); // pop scope
 
@@ -675,15 +724,8 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
 
         YAPLSymbol symbol = getSymbol(id);
 
-        if (symbol == null) {
-            this.createNewError(
-                    ctx.ID().getSymbol().getLine(),
-                    ctx.ID().getSymbol().getCharPositionInLine(),
-                    "No symbol " + id + "."
-            );
-
-            return this.objectType;
-        }
+        // intermediate code
+        this.addresses.put(ctx, this.getCodeFromSymbol(symbol));
 
         return symbol.getType();
     }
@@ -708,6 +750,19 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
         for (int i=1; i < ctx.expr().size(); i++) {
             YAPLType paramType = visit(ctx.expr(i));
 
+            //intermediate code
+            // create temp
+            YAPLSymbol temp = this.generateTemp(paramType);
+
+            this.generateQuad(
+                    "=",
+                    this.addresses.get(ctx.expr(i).getRuleContext()),
+                    this.getCodeFromSymbol(temp),
+                    null
+            );
+            // param temp
+            this.generateQuad("param", this.getCodeFromSymbol(temp), null, null);
+
             if (i < ctx.expr().size()-1) {
                 signature.append(paramType.getId()).append(", ");
             } else {
@@ -716,22 +771,25 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
         }
         signature.append(")");
 
-
-        if (!exprType.getMethods().containsKey(signature.toString())) {
-            this.createNewError(
-                    ctx.expr(0).getStart().getLine(),
-                    ctx.expr(0).getStart().getCharPositionInLine(),
-                    "Type " + exprType.getId() + " doesn't contain method " + signature + "."
-            );
-
-            return this.objectType;
-        }
-
-
         YAPLMethod method = exprType.getMethods().get(signature.toString());
 
         // get return type with signature
         YAPLType returnType = method.getReturnType();
+
+        // create return val temp
+        YAPLSymbol returnValTemp = this.generateTemp(returnType);
+
+        // set ctx address to return temp value
+        this.addresses.put(ctx, this.getCodeFromSymbol(returnValTemp));
+
+        // call intermediate code
+        // returnTempVal = call funcID, param.length
+        this.generateQuad(
+                ",",
+                "call " + ctx.ID().getText(),
+                String.valueOf(ctx.expr().size() - 1),
+                this.getCodeFromSymbol(returnValTemp)
+        );
 
         return method.getReturnType();
     }
@@ -744,17 +802,34 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
     @Override
     public YAPLType visitIfElse(YAPLParser.IfElseContext ctx) {
 
-        // validate if expression type
-        if (!visit(ctx.expr(0)).equals(this.boolType)) {
-            this.createNewError(
-                    ctx.expr(0).start.getLine(),
-                    ctx.expr(0).start.getCharPositionInLine(),
-                    "If expression must be of type Bool."
-            );
-        }
+        String next = genLabel();
 
+        // intermediate code
+        String BTrue = this.genLabel();
+        String BFalse = this.genLabel();
+
+        visit(ctx.expr(0));
+
+        // B true code
+//        System.out.println(ctx.expr(0).getText());
+        this.generateQuad("if", this.addresses.get(ctx.expr(0).getRuleContext()), "goto " + BTrue, null);
+        // B false code
+        this.generateQuad("ifFalse", this.addresses.get(ctx.expr(0).getRuleContext()), "goto " + BFalse, null);
+
+        this.generateQuad(BTrue + ":", null, null, null);
         YAPLType thenType = visit(ctx.expr(1));
-        YAPLType elseType = visit(ctx.expr(2));
+        this.generateQuad("goto " + next, null, null, null);
+
+        this.generateQuad(BFalse + ":", null, null, null);
+        YAPLType elseType = visit(ctx.expr(2)); // visit Else expr
+
+        this.generateQuad(next + ":", null, null, null);
+
+        // create return val temp
+        YAPLSymbol returnValTemp = this.generateTemp(this.objectType);
+
+        // Assign return val to ctx address
+        this.addresses.put(ctx, this.getCodeFromSymbol(returnValTemp));
 
         return thenType.commonAncestorWith(elseType);
     }
@@ -771,25 +846,15 @@ public class YAPLSemanticVisitor extends YAPLBaseVisitor<YAPLType> {
 
         YAPLSymbol symbol = getSymbol(id); // get symbol from first symtable
 
-        if (symbol == null) {
-            this.createNewError(
-                    ctx.ID().getSymbol().getLine(),
-                    ctx.ID().getSymbol().getCharPositionInLine(),
-                    "Id not defined."
-            );
+        // intermediate code
+        this.generateQuad(
+                "=",
+                this.addresses.get(ctx.expr().getRuleContext()),
+                this.getCodeFromSymbol(symbol),
+                null
+        );
 
-            symbol = new YAPLSymbol(id, exprType, exprType.getWidth(), this.offsets.peek(), this.scopes.peek().getScope());
-        }
-
-        if (!isValidAssignment(exprType, symbol.getType())) {
-            this.createNewError(
-                    ctx.expr().start.getLine(),
-                    ctx.expr().start.getCharPositionInLine(),
-                    "Expression type must be of type " + symbol.getType().getId() + "."
-            );
-
-            exprType = symbol.getType(); // ignore errors
-        }
+        this.addresses.put(ctx, this.getCodeFromSymbol(symbol));
 
         return exprType;
     }

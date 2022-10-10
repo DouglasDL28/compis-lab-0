@@ -5,12 +5,14 @@ public class YAPLSymbol {
     private YAPLType type;
     private final int width;
     private Integer offset;
+    private String scope;
 
-    public YAPLSymbol(String id, YAPLType type, int width, int offset) {
+    public YAPLSymbol(String id, YAPLType type, int width, int offset, String scope) {
         this.id = id;
         this.type = type;
         this.width = width;
         this.offset = offset;
+        this.scope = scope;
     }
 
     public String getId() {
@@ -34,4 +36,6 @@ public class YAPLSymbol {
     }
 
     public Integer getWidth() { return this.width; }
+
+    public String getScope() { return this.scope; }
 }

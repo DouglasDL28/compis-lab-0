@@ -17,7 +17,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        String inputFile = "/Users/douglasjr/Documents/DouglasJr/UVG/semestre10/Compiladores/pruebas_YAPL/tests.cl";
+        String inputFile = "/Users/douglasjr/Documents/DouglasJr/UVG/semestre10/Compiladores/pruebas_YAPL/cool.cl";
         if ( args.length>0 ) inputFile = args[0];
         InputStream is = System.in;
         if ( inputFile!=null ) is = new FileInputStream(inputFile);
@@ -39,18 +39,22 @@ public class Main {
         YAPLMethodsVisitor methodsVisitor = new YAPLMethodsVisitor(types, errors);
         methodsVisitor.visit(tree);
 
-        YAPLSemanticVisitor semVisitor = new YAPLSemanticVisitor(types, errors, intermediateCode);
+        YAPLSemanticVisitor semVisitor = new YAPLSemanticVisitor(types, errors);
         semVisitor.visit(tree);
-
-//        for (Quad q: intermediateCode) {
-//            System.out.println(q);
-//        }
 
         if (errors.size() > 0) {
             System.out.println("Detected " + errors.size() + " errors.");
         } else {
-            System.out.println("Compiled successfully!");
+            YAPLIntermediateCodeVisitor intermediateCodeVisitor = new YAPLIntermediateCodeVisitor(types, intermediateCode);
+            intermediateCodeVisitor.visit(tree);
+
+            System.out.println("Compiled successfully!\n");
         }
+
+//        System.out.println("Intermediate code:\n");
+//        for (Quad q: intermediateCode) {
+//            System.out.println(q);
+//        }
 
     }
 }

@@ -10,6 +10,7 @@ public class YAPLType {
     private YAPLType parent;
     private int depth;
     private int width = 8;
+    private String defaultVal = "VOID";
 
 
     public YAPLType(String id, YAPLType parent, int depth) {
@@ -20,13 +21,14 @@ public class YAPLType {
         this.depth = depth;
     }
 
-    public YAPLType(String id, YAPLType parent, int depth, int width) {
+    public YAPLType(String id, YAPLType parent, int depth, int width, String defaultVal) {
         this.id = id;
         this.parent = parent;
         this.attributes = new HashMap<>();
         this.methods = new HashMap<>();
         this.depth = depth;
         this.width = width;
+        this.defaultVal = defaultVal;
     }
 
     public String getId() {
@@ -60,9 +62,12 @@ public class YAPLType {
         this.depth = depth;
     }
 
+    public String getDefaultVal() {
+        return defaultVal;
+    }
     /**
      * Validates if parent is an ancestor by name. Works recursively.
-     * @param parent YAPLType.
+     * @param typeToCheck YAPLType.
      * @return boolean
      */
     public boolean isDescendantOf(YAPLType typeToCheck) {

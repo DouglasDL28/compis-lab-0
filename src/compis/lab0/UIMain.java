@@ -219,7 +219,7 @@ public class UIMain extends Application {
                 methodsVisitor.visit(tree);
                 System.out.println("\n");
 
-                YAPLSemanticVisitor semVisitor = new YAPLSemanticVisitor(types, errors, intermediateCode);
+                YAPLSemanticVisitor semVisitor = new YAPLSemanticVisitor(types, errors);
                 semVisitor.visit(tree);
 
                 if (errors.size() > 0) {

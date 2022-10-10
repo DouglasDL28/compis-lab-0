@@ -17,9 +17,9 @@ public class YAPLTypesTable {
      */
     public YAPLTypesTable() {
         YAPLType objectType = new YAPLType("Object", null, 0);
-        YAPLType intType = new YAPLType("Int", objectType, 1, 4);
-        YAPLType stringType = new YAPLType("String", objectType, 1, 256);
-        YAPLType boolType = new YAPLType("Bool", objectType, 1, 1);
+        YAPLType intType = new YAPLType("Int", objectType, 1, 4, "0");
+        YAPLType stringType = new YAPLType("String", objectType, 1, 256, "\"\"");
+        YAPLType boolType = new YAPLType("Bool", objectType, 1, 1, "TRUE");
         YAPLType ioType = new YAPLType("IO", objectType, 1);
         this.types = new HashMap<>() {{
             put("Object", objectType);
