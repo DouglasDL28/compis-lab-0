@@ -206,8 +206,6 @@ public class YAPLIntermediateCodeVisitor extends YAPLBaseVisitor<YAPLType> {
                     this.getCodeFromSymbol(symbol),
                     null
             );
-
-
         }
 
         signature.append(")");
@@ -216,6 +214,23 @@ public class YAPLIntermediateCodeVisitor extends YAPLBaseVisitor<YAPLType> {
 
         for (int i=0; i < ctx.expr().size(); i ++) {
             YAPLType exprType = visit(ctx.expr(i));
+
+            if (i == ctx.expr().size()-1) { // last expr
+                // create return val temp
+                YAPLSymbol returnValTemp = this.generateTemp(exprType);
+
+                this.generateQuad(
+                        "=",
+                        this.addresses.get(ctx.expr(i).getRuleContext()),
+                        this.getCodeFromSymbol(returnValTemp),
+                        null
+                );
+
+                this.generateQuad("return", this.getCodeFromSymbol(returnValTemp), null, null);
+
+                // set ctx address to return temp value
+                this.addresses.put(ctx, this.getCodeFromSymbol(returnValTemp));
+            }
         }
 
         // pop top in scopes and temps stacks
@@ -241,7 +256,7 @@ public class YAPLIntermediateCodeVisitor extends YAPLBaseVisitor<YAPLType> {
         YAPLType varType = this.types.getType(typeId);
 
         // Check expression
-        if (ctx.expr() == null) {
+        if (ctx.expr() == null) { // no assign
             YAPLSymbol symbol = new YAPLSymbol(id, varType, varType.getWidth(), 0, this.interCodeScope.peek());
             scopes.peek().add(symbol);
 
@@ -251,6 +266,8 @@ public class YAPLIntermediateCodeVisitor extends YAPLBaseVisitor<YAPLType> {
                     this.getCodeFromSymbol(symbol),
                     null
             );
+
+            this.addresses.put(ctx, this.getCodeFromSymbol(symbol));
 
             return varType;
         } else {
@@ -268,6 +285,8 @@ public class YAPLIntermediateCodeVisitor extends YAPLBaseVisitor<YAPLType> {
                     this.getCodeFromSymbol(newSymbol),
                     null
             );
+
+            this.addresses.put(ctx, this.getCodeFromSymbol(newSymbol));
 
             return exprType;
         }
@@ -704,7 +723,7 @@ public class YAPLIntermediateCodeVisitor extends YAPLBaseVisitor<YAPLType> {
         }
 
         YAPLType exprType = visit(ctx.expr());
-        this.addresses.put(ctx, ctx.expr().getRuleContext().toString());
+        this.addresses.put(ctx, this.addresses.get(ctx.expr().getRuleContext()));
 
         this.scopes.pop(); // pop scope
 
@@ -808,9 +827,13 @@ public class YAPLIntermediateCodeVisitor extends YAPLBaseVisitor<YAPLType> {
         String BTrue = this.genLabel();
         String BFalse = this.genLabel();
 
-        visit(ctx.expr(0));
+        visit(ctx.expr(0)); // visit B
 
         // B true code
+
+        // create return val temp
+        YAPLSymbol returnValTemp = this.generateTemp(this.objectType);
+
 //        System.out.println(ctx.expr(0).getText());
         this.generateQuad("if", this.addresses.get(ctx.expr(0).getRuleContext()), "goto " + BTrue, null);
         // B false code
@@ -818,15 +841,15 @@ public class YAPLIntermediateCodeVisitor extends YAPLBaseVisitor<YAPLType> {
 
         this.generateQuad(BTrue + ":", null, null, null);
         YAPLType thenType = visit(ctx.expr(1));
+        this.generateQuad("=", this.addresses.get(ctx.expr(1).getRuleContext()), this.getCodeFromSymbol(returnValTemp),null);
         this.generateQuad("goto " + next, null, null, null);
 
         this.generateQuad(BFalse + ":", null, null, null);
         YAPLType elseType = visit(ctx.expr(2)); // visit Else expr
+        this.generateQuad("=", this.addresses.get(ctx.expr(2).getRuleContext()), this.getCodeFromSymbol(returnValTemp),null);
 
         this.generateQuad(next + ":", null, null, null);
 
-        // create return val temp
-        YAPLSymbol returnValTemp = this.generateTemp(this.objectType);
 
         // Assign return val to ctx address
         this.addresses.put(ctx, this.getCodeFromSymbol(returnValTemp));
